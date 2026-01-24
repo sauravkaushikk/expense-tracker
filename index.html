@@ -14,77 +14,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <style>
-        .app-logo {
-            background-image: url('logo.png');
-            background-size: cover;
-            background-position: center;
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            border-radius: 22px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
+        .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 80px; height: 80px; margin-bottom: 20px; border-radius: 22px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBSfbUpYpgu0kLC2a1I4oEiQjH_zQoxcdE",
-            authDomain: "expensetracker-7da2d.firebaseapp.com",
-            projectId: "expensetracker-7da2d",
-            storageBucket: "expensetracker-7da2d.firebasestorage.app",
-            messagingSenderId: "765154907153",
-            appId: "1:765154907153:web:089afc8966a991c9524db0",
-            measurementId: "G-8TBNNT0ZWK"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        window.login = () => signInWithPopup(auth, provider);
-        window.logout = () => signOut(auth);
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.currentUser = user;
-                document.getElementById('loginPage').classList.add('hidden');
-                document.getElementById('appPage').classList.remove('hidden');
-                document.getElementById('userName').innerText = user.displayName;
-                syncData();
-            } else {
-                document.getElementById('loginPage').classList.remove('hidden');
-                document.getElementById('appPage').classList.add('hidden');
-            }
-        });
-
-        function syncData() {
-            const q = query(collection(db, "expenses"), where("uid", "==", window.currentUser.uid), orderBy("date", "desc"));
-            onSnapshot(q, (snapshot) => {
-                window.expenses = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                window.render();
-            });
-        }
-
-        window.saveToCloud = async (data, editId = null) => {
-            if (editId) {
-                await updateDoc(doc(db, "expenses", editId), data);
-            } else {
-                await addDoc(collection(db, "expenses"), { ...data, uid: window.currentUser.uid });
-            }
-        };
-
-        window.deleteFromCloud = async (id) => {
-            if (confirm("Permanently delete this record?")) {
-                await deleteDoc(doc(db, "expenses", id));
-            }
-        };
-    </script>
 </head>
 <body class="bg-gray-50 text-slate-800 pb-24">
 
@@ -92,8 +28,7 @@
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-2">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Cloud-secured Expense Tracking</p>
-            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">
+            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-4 shadow-lg active:scale-95 transition-transform">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Sign in with Google
             </button>
@@ -102,79 +37,51 @@
 
     <div id="appPage" class="hidden max-w-md mx-auto p-4">
         <div class="flex justify-between items-center mb-6 px-2 pt-2">
-            <p class="text-xs font-bold uppercase tracking-widest text-gray-400">Hi, <span id="userName" class="text-blue-600">User</span></p>
+            <p class="text-xs font-bold uppercase text-gray-400">Hi, <span id="userName" class="text-blue-600">User</span></p>
             <button onclick="logout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
         </div>
 
-        <div id="dashCard" class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
+        <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
             <div class="flex justify-between items-start mb-2">
-                <p id="periodLabel" class="text-slate-400 text-[10px] uppercase tracking-widest">Monthly Spend</p>
-                <button onclick="setSalary()" class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg uppercase">Set Salary</button>
+                <p class="text-slate-400 text-[10px] uppercase">Monthly Spend</p>
+                <button onclick="setSalary()" class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-4xl font-bold mb-4">₹0</h2>
-            
-            <div class="mb-4">
-                <div class="flex justify-between text-[10px] mb-1.5 text-slate-400 uppercase">
-                    <span>Budget Usage</span>
-                    <span id="budgetPercent">0%</span>
-                </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div id="progressBar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
-                </div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-4">
+                <div id="progressBar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
             </div>
-
             <div class="flex justify-between border-t border-slate-700 pt-4">
-                <div><p class="text-[10px] text-slate-400 uppercase">Today</p><p id="dailyTotal" class="text-lg font-bold text-blue-400">₹0</p></div>
-                <div class="text-right"><p class="text-[10px] text-slate-400 uppercase">Limit</p><p id="salaryDisplay" class="text-lg font-bold">₹0</p></div>
+                <div><p class="text-[10px] text-slate-400 uppercase">Today</p><p id="dailyTotal" class="text-lg font-bold">₹0</p></div>
+                <div class="text-right"><p class="text-[10px] text-slate-400 uppercase">Salary</p><p id="salaryDisplay" class="text-lg font-bold">₹0</p></div>
             </div>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
             <input type="hidden" id="editId" value="">
-            
-            <button onclick="addCustomCategory()" class="w-full mb-4 bg-blue-50 text-blue-600 p-4 rounded-2xl text-sm font-bold border border-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all">
-                <span>➕ Add New Category</span>
-            </button>
-
+            <button onclick="addCustomCategory()" class="w-full mb-4 bg-blue-50 text-blue-600 p-4 rounded-2xl text-sm font-bold border border-blue-100">➕ Add New Category</button>
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none">
+                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none border border-transparent focus:border-blue-200">
                 <select id="sector" onchange="toggleSubSector()" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm"></select>
             </div>
-
             <div id="subSectorContainer" class="hidden mb-3">
-                <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-100 border border-blue-200 outline-none text-sm font-bold text-blue-800">
+                <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-50 border border-blue-100 outline-none text-sm font-bold text-blue-800">
                     <option value="📱 Mobile Recharge">📱 Mobile Recharge</option>
                     <option value="🌐 Fiber Bill">🌐 Fiber Bill</option>
                     <option value="💳 Credit Card">💳 Credit Card</option>
                 </select>
             </div>
-
             <div class="flex gap-3 mb-4">
                 <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
-                    <option>UPI</option>
-                    <option>Cash</option>
-                    <option>Credit Card</option>
-                    <option>Debit Card</option>
+                    <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option>
                 </select>
                 <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
             </div>
-            
-            <button id="saveBtn" onclick="saveExpense()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
-                Add Expense
-            </button>
+            <button id="saveBtn" onclick="saveExpense()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-blue-100">Add Expense</button>
         </div>
 
-        <div class="bg-white p-4 rounded-[2rem] border border-gray-100 mb-6 text-center">
-            <div class="grid grid-cols-2 gap-2 mb-3">
-                <input id="startDate" type="date" oninput="render()" class="p-2.5 rounded-xl bg-gray-50 text-[10px] outline-none">
-                <input id="endDate" type="date" oninput="render()" class="p-2.5 rounded-xl bg-gray-50 text-[10px] outline-none">
-            </div>
-            <input id="searchInput" oninput="render()" type="text" placeholder="🔍 Search transactions..." class="w-full p-3.5 rounded-xl bg-gray-50 outline-none text-sm">
-        </div>
-
-        <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6 hidden">
-            <div class="h-56 mb-4"><canvas id="expenseChart"></canvas></div>
-            <div id="breakdownList" class="space-y-3"></div>
+        <div id="chartSection" class="bg-white p-6 rounded-[2rem] border mb-6 hidden">
+            <canvas id="expenseChart" class="h-48"></canvas>
+            <div id="breakdownList" class="mt-4 space-y-2"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-6">
@@ -186,125 +93,109 @@
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSfbUpYpgu0kLC2a1I4oEiQjH_zQoxcdE",
+            authDomain: "expensetracker-7da2d.firebaseapp.com",
+            projectId: "expensetracker-7da2d",
+            storageBucket: "expensetracker-7da2d.firebasestorage.app",
+            messagingSenderId: "765154907153",
+            appId: "1:765154907153:web:089afc8966a991c9524db0"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+
         let expenses = [];
+        let myChart = null;
         let monthlySalary = localStorage.getItem('mySalary') || 50000;
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
-        let myChart = null;
 
-        function init() {
-            const sectorSelect = document.getElementById('sector');
-            sectorSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
-        }
+        function login() { auth.signInWithPopup(provider); }
+        function logout() { auth.signOut(); }
 
-        window.addCustomCategory = function() {
-            const newCat = prompt("Enter category name + emoji (e.g., 🏠 Rent):");
-            if (newCat && !categories.includes(newCat)) {
-                categories.push(newCat);
-                localStorage.setItem('myCats', JSON.stringify(categories));
-                init(); 
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('appPage').classList.remove('hidden');
+                document.getElementById('userName').innerText = user.displayName;
+                db.collection("expenses").where("uid", "==", user.uid).orderBy("date", "desc")
+                    .onSnapshot(snap => {
+                        expenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        render();
+                    });
+            } else {
+                document.getElementById('loginPage').classList.remove('hidden');
+                document.getElementById('appPage').classList.add('hidden');
             }
-        }
+        });
 
-        window.toggleSubSector = function() {
-            const isBill = document.getElementById('sector').value === "🧾 Bills";
-            document.getElementById('subSectorContainer').classList.toggle('hidden', !isBill);
-        }
-
-        window.saveExpense = async function() {
-            const amountVal = document.getElementById('amount').value;
-            const dateVal = document.getElementById('date').value;
+        async function saveExpense() {
+            const amount = document.getElementById('amount').value;
+            const date = document.getElementById('date').value;
             const editId = document.getElementById('editId').value;
             
-            if (!amountVal || !dateVal) {
-                alert("Please enter amount and date");
-                return;
-            }
+            if (!amount || !date) return alert("Enter amount and date!");
 
             let sector = document.getElementById('sector').value;
             if (sector === "🧾 Bills") sector = `🧾 Bill: ${document.getElementById('subSector').value}`;
             
-            const data = { 
-                amount: parseFloat(amountVal), 
-                sector: sector, 
-                method: document.getElementById('method').value, 
-                date: dateVal, 
-                timestamp: Date.now() 
+            const data = {
+                amount: parseFloat(amount),
+                sector: sector,
+                method: document.getElementById('method').value,
+                date: date,
+                uid: auth.currentUser.uid,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
-            
+
             try {
-                await window.saveToCloud(data, editId === "" ? null : editId);
-                // Clear Form
-                document.getElementById('amount').value = '';
-                document.getElementById('editId').value = "";
-                document.getElementById('saveBtn').innerText = 'Add Expense';
-                document.getElementById('saveBtn').className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all";
-            } catch (e) {
-                alert("Error saving: " + e.message);
-            }
+                if (editId) {
+                    await db.collection("expenses").doc(editId).update(data);
+                    document.getElementById('editId').value = "";
+                    document.getElementById('saveBtn').innerText = "Add Expense";
+                    document.getElementById('saveBtn').className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-blue-100";
+                } else {
+                    await db.collection("expenses").add(data);
+                }
+                document.getElementById('amount').value = "";
+            } catch (e) { alert("Error: " + e.message); }
         }
 
-        window.editEntry = (id) => {
-            const ex = window.expenses.find(e => e.id === id);
-            document.getElementById('amount').value = ex.amount;
-            document.getElementById('date').value = ex.date;
-            document.getElementById('editId').value = id;
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.innerText = 'Update Record';
-            saveBtn.className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all";
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-
-        window.render = function() {
+        function render() {
             const today = new Date().toISOString().split('T')[0];
-            const startD = document.getElementById('startDate').value;
-            const endD = document.getElementById('endDate').value;
-            const search = document.getElementById('searchInput').value.toLowerCase();
+            let dSum = 0, mSum = 0, sMap = {};
             
-            let dSum = 0, fSum = 0, sMap = {};
-
-            const filtered = (window.expenses || []).filter(ex => {
-                const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
-                const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
+            document.getElementById('history').innerHTML = expenses.map(ex => {
                 if (ex.date === today) dSum += ex.amount;
-                return matchesDate && matchesSearch;
-            });
-
-            document.getElementById('history').innerHTML = filtered.map(ex => {
-                fSum += ex.amount;
+                mSum += ex.amount;
                 sMap[ex.sector] = (sMap[ex.sector] || 0) + ex.amount;
                 return `
-                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-50 shadow-sm">
-                    <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
-                    <div class="flex items-center gap-3">
+                <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
+                    <div><p class="font-bold text-sm">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
+                    <div class="flex items-center gap-2">
                         <p class="font-bold">₹${ex.amount}</p>
-                        <button onclick="editEntry('${ex.id}')" class="text-blue-500 font-bold text-xs bg-blue-50 px-2 py-1 rounded-lg">Edit</button>
-                        <button onclick="deleteFromCloud('${ex.id}')" class="text-red-500 font-bold text-xs px-2 py-1">✕</button>
+                        <button onclick="editEntry('${ex.id}')" class="text-blue-500 text-xs bg-blue-50 px-2 py-1 rounded">Edit</button>
+                        <button onclick="deleteEntry('${ex.id}')" class="text-red-500 text-xs font-bold px-1">✕</button>
                     </div>
                 </div>`;
             }).join('');
 
-            updateUI(dSum, fSum, sMap);
+            updateUI(dSum, mSum, sMap);
         }
 
-        function updateUI(dSum, fSum, sMap) {
+        function updateUI(dSum, mSum, sMap) {
             document.getElementById('dailyTotal').innerText = `₹${dSum}`;
-            document.getElementById('monthlyTotal').innerText = `₹${fSum}`;
-            const pc = Math.min((fSum / monthlySalary) * 100, 100).toFixed(1);
-            document.getElementById('budgetPercent').innerText = `${pc}%`;
-            const bar = document.getElementById('progressBar');
-            bar.style.width = `${pc}%`;
-            bar.className = pc > 90 ? "bg-red-500 h-full transition-all" : pc > 70 ? "bg-orange-500 h-full transition-all" : "bg-blue-500 h-full transition-all";
-
-            if (fSum > 0) {
+            document.getElementById('monthlyTotal').innerText = `₹${mSum}`;
+            document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
+            const pc = Math.min((mSum/monthlySalary)*100, 100).toFixed(1);
+            document.getElementById('progressBar').style.width = pc + "%";
+            
+            if (mSum > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
                 updateChart(sMap);
-                document.getElementById('breakdownList').innerHTML = Object.entries(sMap).map(([name, val]) => {
-                    const perc = ((val/fSum)*100).toFixed(0);
-                    return `<div><div class="flex justify-between text-[10px] mb-1 font-bold"><span>${name}</span><span>₹${val} (${perc}%)</span></div><div class="w-full bg-gray-50 h-1.5 rounded-full"><div class="bg-blue-600 h-1.5 rounded-full" style="width:${perc}%"></div></div></div>`;
-                }).join('');
-            } else document.getElementById('chartSection').classList.add('hidden');
+            }
         }
 
         function updateChart(sMap) {
@@ -312,28 +203,38 @@
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981', '#64748b'], borderWidth: 0 }] },
+                data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981'], borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
             });
         }
 
-        const stripEmojis = (str) => str.replace(/[\u1000-\uFFFF]+/g, '').replace(/[^\x00-\x7F]/g, "").trim();
-        window.exportPDF = () => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Expense Report", 14, 20);
-            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: window.expenses.map(e => [e.date, stripEmojis(e.sector), e.method, e.amount]), startY: 30 });
-            doc.save("Report.pdf");
+        function deleteEntry(id) { if(confirm("Delete?")) db.collection("expenses").doc(id).delete(); }
+
+        function editEntry(id) {
+            const ex = expenses.find(e => e.id === id);
+            document.getElementById('amount').value = ex.amount;
+            document.getElementById('date').value = ex.date;
+            document.getElementById('editId').value = id;
+            document.getElementById('saveBtn').innerText = "Update Record";
+            document.getElementById('saveBtn').className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg";
+            window.scrollTo({top: 0, behavior: 'smooth'});
         }
-        window.exportExcel = () => {
-            const ws = XLSX.utils.json_to_sheet(window.expenses.map(e => ({ Date: e.date, Category: stripEmojis(e.sector), Method: e.method, Amount: e.amount })));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-            XLSX.writeFile(wb, "Expenses.xlsx");
+
+        function addCustomCategory() {
+            const n = prompt("Category Name + Emoji:");
+            if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); init(); }
         }
-        window.setSalary = () => {
-            const s = prompt("Salary/Budget:", monthlySalary);
-            if (s) { monthlySalary = s; localStorage.setItem('mySalary', s); window.render(); }
+
+        function setSalary() {
+            const s = prompt("Salary:", monthlySalary);
+            if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); render(); }
+        }
+
+        function toggleSubSector() { document.getElementById('subSectorContainer').classList.toggle('hidden', document.getElementById('sector').value !== "🧾 Bills"); }
+
+        function init() {
+            document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
         }
 
         init();
