@@ -20,10 +20,11 @@
 
     <style>
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 70px; height: 70px; margin-bottom: 15px; border-radius: 18px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .custom-scroll::-webkit-scrollbar { width: 0px; }
         input, select, button { touch-action: manipulation; }
     </style>
 </head>
-<body class="bg-gray-50 text-slate-800 pb-20">
+<body class="bg-gray-50 text-slate-800 pb-20 custom-scroll">
 
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
@@ -83,6 +84,14 @@
             <button id="saveBtn" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">Add Expense</button>
         </div>
 
+        <div class="bg-white p-4 rounded-[2rem] border border-gray-100 mb-6 text-center">
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <input id="startDate" type="date" class="p-2.5 rounded-xl bg-gray-50 text-[10px] outline-none">
+                <input id="endDate" type="date" class="p-2.5 rounded-xl bg-gray-50 text-[10px] outline-none">
+            </div>
+            <input id="searchInput" type="text" placeholder="🔍 Search transactions..." class="w-full p-3.5 rounded-xl bg-gray-50 outline-none text-sm">
+        </div>
+
         <div class="grid grid-cols-2 gap-3 mb-6 px-2">
             <button id="excelBtn" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold border border-green-200">📊 Excel</button>
             <button id="pdfBtn" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold border border-red-200">📄 PDF</button>
@@ -112,14 +121,19 @@
         document.addEventListener('DOMContentLoaded', () => {
             initApp();
             
-            // Button Event Listeners (More reliable for mobile)
-            document.getElementById('googleLoginBtn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-            document.getElementById('logoutBtn').onclick = () => auth.signOut();
-            document.getElementById('saveBtn').onclick = saveExpense;
-            document.getElementById('addCatBtn').onclick = addCustomCategory;
-            document.getElementById('salaryBtn').onclick = setSalary;
-            document.getElementById('excelBtn').onclick = exportExcel;
-            document.getElementById('pdfBtn').onclick = exportPDF;
+            // Explicit Button Mapping
+            document.getElementById('googleLoginBtn').addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+            document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+            document.getElementById('saveBtn').addEventListener('click', saveExpense);
+            document.getElementById('addCatBtn').addEventListener('click', addCustomCategory);
+            document.getElementById('salaryBtn').addEventListener('click', setSalary);
+            document.getElementById('excelBtn').addEventListener('click', exportExcel);
+            document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+            
+            document.getElementById('startDate').addEventListener('input', render);
+            document.getElementById('endDate').addEventListener('input', render);
+            document.getElementById('searchInput').addEventListener('input', render);
+
             document.getElementById('sector').onchange = (e) => {
                 document.getElementById('subSectorContainer').classList.toggle('hidden', e.target.value !== "🧾 Bills");
             };
@@ -171,7 +185,8 @@
                     await db.collection("expenses").doc(editId).update(data);
                     document.getElementById('editId').value = "";
                     document.getElementById('saveBtn').innerText = "Add Expense";
-                    document.getElementById('saveBtn').className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg";
+                    document.getElementById('saveBtn').classList.remove('bg-orange-500');
+                    document.getElementById('saveBtn').classList.add('bg-blue-600');
                 } else {
                     await db.collection("expenses").add(data);
                 }
@@ -181,10 +196,20 @@
 
         function render() {
             const today = new Date().toISOString().split('T')[0];
+            const startD = document.getElementById('startDate').value;
+            const endD = document.getElementById('endDate').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
             let dSum = 0, mSum = 0;
             
-            document.getElementById('history').innerHTML = expenses.map(ex => {
+            const filtered = expenses.filter(ex => {
+                const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
+                const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
                 if (ex.date === today) dSum += ex.amount;
+                return matchesDate && matchesSearch;
+            });
+
+            document.getElementById('history').innerHTML = filtered.map(ex => {
                 mSum += ex.amount;
                 return `
                 <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm mb-3">
@@ -192,7 +217,7 @@
                     <div class="flex items-center gap-2">
                         <p class="font-bold">₹${ex.amount}</p>
                         <button onclick="editEntry('${ex.id}')" class="text-blue-500 text-xs bg-blue-50 px-2 py-1 rounded">Edit</button>
-                        <button onclick="deleteEntry('${ex.id}')" class="text-red-400 text-xs px-1">✕</button>
+                        <button onclick="deleteEntry('${ex.id}')" class="text-red-500 text-xs px-1">✕</button>
                     </div>
                 </div>`;
             }).join('');
@@ -210,7 +235,8 @@
             document.getElementById('date').value = ex.date;
             document.getElementById('editId').value = id;
             document.getElementById('saveBtn').innerText = "Update Record";
-            document.getElementById('saveBtn').className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg";
+            document.getElementById('saveBtn').classList.remove('bg-blue-600');
+            document.getElementById('saveBtn').classList.add('bg-orange-500');
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
