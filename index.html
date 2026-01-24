@@ -19,7 +19,8 @@
 
     <style>
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 70px; height: 70px; margin-bottom: 15px; border-radius: 18px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .custom-scroll::-webkit-scrollbar { width: 0px; }
+        .custom-scroll::-webkit-scrollbar { display: none; }
+        .custom-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 pb-20 custom-scroll">
@@ -27,7 +28,7 @@
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
-            <h1 class="text-3xl font-bold mb-4 text-slate-900">Spend Guard</h1>
+            <h1 class="text-3xl font-bold mb-4">Spend Guard</h1>
             <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Login with Google
@@ -37,7 +38,7 @@
 
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
         <div class="flex justify-between items-center mb-6 px-1">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hi, <span id="userName" class="text-blue-600">User</span></p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400">LOGOUT</button>
         </div>
 
@@ -47,15 +48,12 @@
                 <button onclick="handleSetSalary()" class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-4xl font-bold mb-4">₹0</h2>
-            
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-6">
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-4">
                 <div id="progressBar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
             </div>
-
-            <div class="mb-2">
-                <p class="text-[9px] uppercase font-bold text-slate-500 mb-2">Recent Success</p>
-                <div id="recentWidget" class="flex gap-2 overflow-x-auto custom-scroll pb-2">
-                    </div>
+            <div class="flex justify-between border-t border-slate-700 pt-4">
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Today</p><p id="dailyTotal" class="text-lg font-bold text-blue-400">₹0</p></div>
+                <div class="text-right"><p class="text-[10px] text-slate-400 uppercase font-bold">Salary</p><p id="salaryDisplay" class="text-lg font-bold">₹0</p></div>
             </div>
         </div>
 
@@ -64,7 +62,7 @@
             <button onclick="handleAddCategory()" class="w-full mb-4 bg-blue-50 text-blue-600 p-4 rounded-2xl text-sm font-bold border border-blue-100">➕ Add New Category</button>
             
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none border border-transparent focus:border-blue-200">
+                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none">
                 <select id="sector" onchange="checkBillsCategory(this.value)" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm"></select>
             </div>
 
@@ -82,7 +80,13 @@
                 </select>
                 <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
             </div>
-            <button id="saveBtn" onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">Add Expense</button>
+            <button id="saveBtn" onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg mb-4">Add Expense</button>
+
+            <div class="border-t border-gray-100 pt-4">
+                <p class="text-[10px] uppercase font-bold text-gray-400 mb-2 px-1">Recently Added</p>
+                <div id="recentWidget" class="flex gap-2 overflow-x-auto custom-scroll pb-1">
+                    </div>
+            </div>
         </div>
 
         <div class="bg-white p-4 rounded-[2rem] border border-gray-100 mb-6 text-center">
@@ -130,11 +134,8 @@
                 document.getElementById('loginPage').classList.add('hidden');
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
-                
-                // NO ORDER BY IN QUERY TO BYPASS INDEX ERROR
                 db.collection("expenses").where("uid", "==", user.uid)
                     .onSnapshot(snap => {
-                        // MANUAL SORTING IN THE APP
                         allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                             .sort((a, b) => new Date(b.date) - new Date(a.date));
                         handleRender();
@@ -168,7 +169,7 @@
                     await db.collection("expenses").doc(editId).update(data);
                     document.getElementById('editId').value = "";
                     document.getElementById('saveBtn').innerText = "Add Expense";
-                    document.getElementById('saveBtn').className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg";
+                    document.getElementById('saveBtn').className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg mb-4";
                 } else {
                     await db.collection("expenses").add(data);
                 }
@@ -177,19 +178,27 @@
         }
 
         function handleRender() {
+            const today = new Date().toISOString().split('T')[0];
             const startD = document.getElementById('startDate').value;
             const endD = document.getElementById('endDate').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
+            let dSum = 0;
             let mSum = 0;
             
             const filtered = allExpenses.filter(ex => {
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
                 const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
+                if (ex.date === today) dSum += ex.amount;
+                // Only count totals for the current month in dashboard
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const exDate = new Date(ex.date);
+                if (exDate.getMonth() === currentMonth && exDate.getFullYear() === currentYear) mSum += ex.amount;
+                
                 return matchesDate && matchesSearch;
             });
 
             document.getElementById('history').innerHTML = filtered.map(ex => {
-                mSum += ex.amount;
                 return `
                 <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm mb-3">
                     <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
@@ -201,14 +210,15 @@
                 </div>`;
             }).join('');
 
-            // UPDATE TOP WIDGET
+            // UPDATE TOP WIDGET (MOST RECENT 5)
             document.getElementById('recentWidget').innerHTML = allExpenses.slice(0, 5).map(ex => `
-                <div class="flex-shrink-0 bg-slate-800 p-2 rounded-xl text-center min-w-[70px]">
-                    <p class="text-[10px] font-bold text-blue-400">₹${ex.amount}</p>
-                    <p class="text-[7px] text-slate-500 truncate w-12 mx-auto">${ex.sector}</p>
+                <div class="flex-shrink-0 bg-gray-50 border border-gray-100 p-2 rounded-xl text-center min-w-[80px]">
+                    <p class="text-[11px] font-bold text-blue-600">₹${ex.amount}</p>
+                    <p class="text-[8px] text-gray-400 truncate w-16 mx-auto">${ex.sector}</p>
                 </div>
             `).join('');
 
+            document.getElementById('dailyTotal').innerText = `₹${dSum}`;
             document.getElementById('monthlyTotal').innerText = `₹${mSum}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             const pc = Math.min((mSum/monthlySalary)*100, 100).toFixed(1);
@@ -222,7 +232,7 @@
             document.getElementById('date').value = ex.date;
             document.getElementById('editId').value = id;
             document.getElementById('saveBtn').innerText = "Update Record";
-            document.getElementById('saveBtn').className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg";
+            document.getElementById('saveBtn').className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg mb-4";
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
