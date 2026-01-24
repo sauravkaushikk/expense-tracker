@@ -12,7 +12,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -21,7 +20,6 @@
     <style>
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 70px; height: 70px; margin-bottom: 15px; border-radius: 18px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .custom-scroll::-webkit-scrollbar { width: 0px; }
-        button, input, select { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 pb-20 custom-scroll">
@@ -29,7 +27,7 @@
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
-            <h1 class="text-3xl font-bold mb-4">Spend Guard</h1>
+            <h1 class="text-3xl font-bold mb-4 text-slate-900">Spend Guard</h1>
             <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Login with Google
@@ -38,23 +36,26 @@
     </div>
 
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
-        <div class="flex justify-between items-center mb-6">
-            <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
+        <div class="flex justify-between items-center mb-6 px-1">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hi, <span id="userName" class="text-blue-600">User</span></p>
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400">LOGOUT</button>
         </div>
 
         <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
             <div class="flex justify-between items-start mb-2">
-                <p class="text-slate-400 text-[10px] uppercase">Monthly Spend</p>
+                <p class="text-slate-400 text-[10px] uppercase font-bold">Monthly Spend</p>
                 <button onclick="handleSetSalary()" class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-4xl font-bold mb-4">₹0</h2>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-4">
+            
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-6">
                 <div id="progressBar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
             </div>
-            <div class="flex justify-between border-t border-slate-700 pt-4 text-center">
-                <div><p class="text-[10px] text-slate-400 uppercase">Today</p><p id="dailyTotal" class="text-lg font-bold">₹0</p></div>
-                <div><p class="text-[10px] text-slate-400 uppercase">Salary</p><p id="salaryDisplay" class="text-lg font-bold">₹0</p></div>
+
+            <div class="mb-2">
+                <p class="text-[9px] uppercase font-bold text-slate-500 mb-2">Recent Success</p>
+                <div id="recentWidget" class="flex gap-2 overflow-x-auto custom-scroll pb-2">
+                    </div>
             </div>
         </div>
 
@@ -63,7 +64,7 @@
             <button onclick="handleAddCategory()" class="w-full mb-4 bg-blue-50 text-blue-600 p-4 rounded-2xl text-sm font-bold border border-blue-100">➕ Add New Category</button>
             
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none">
+                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none border border-transparent focus:border-blue-200">
                 <select id="sector" onchange="checkBillsCategory(this.value)" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm"></select>
             </div>
 
@@ -92,7 +93,7 @@
             <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search Category or Method..." class="w-full p-3.5 rounded-xl bg-gray-50 outline-none text-sm">
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mb-6 px-2">
+        <div class="grid grid-cols-2 gap-3 mb-6 px-1">
             <button onclick="handleExcel()" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold border border-green-200">📊 Excel</button>
             <button onclick="handlePDF()" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold border border-red-200">📄 PDF</button>
         </div>
@@ -101,7 +102,6 @@
     </div>
 
     <script>
-        // FIREBASE SETUP
         const firebaseConfig = {
             apiKey: "AIzaSyBSfbUpYpgu0kLC2a1I4oEiQjH_zQoxcdE",
             authDomain: "expensetracker-7da2d.firebaseapp.com",
@@ -118,7 +118,6 @@
         let monthlySalary = localStorage.getItem('mySalary') || 50000;
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
 
-        // UI HELPERS
         function checkBillsCategory(val) {
             document.getElementById('subSectorContainer').classList.toggle('hidden', val !== "🧾 Bills");
         }
@@ -131,9 +130,13 @@
                 document.getElementById('loginPage').classList.add('hidden');
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
-                db.collection("expenses").where("uid", "==", user.uid).orderBy("date", "desc")
+                
+                // NO ORDER BY IN QUERY TO BYPASS INDEX ERROR
+                db.collection("expenses").where("uid", "==", user.uid)
                     .onSnapshot(snap => {
-                        allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        // MANUAL SORTING IN THE APP
+                        allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                            .sort((a, b) => new Date(b.date) - new Date(a.date));
                         handleRender();
                     });
             } else {
@@ -146,7 +149,6 @@
             const amount = document.getElementById('amount').value;
             const date = document.getElementById('date').value;
             const editId = document.getElementById('editId').value;
-            
             if (!amount || !date) return alert("Please fill amount and date");
 
             let sector = document.getElementById('sector').value;
@@ -171,21 +173,18 @@
                     await db.collection("expenses").add(data);
                 }
                 document.getElementById('amount').value = "";
-            } catch (e) { alert("Save Failed: " + e.message); }
+            } catch (e) { alert("Save Error: " + e.message); }
         }
 
         function handleRender() {
-            const today = new Date().toISOString().split('T')[0];
             const startD = document.getElementById('startDate').value;
             const endD = document.getElementById('endDate').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
-            
-            let dSum = 0, mSum = 0;
+            let mSum = 0;
             
             const filtered = allExpenses.filter(ex => {
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
                 const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
-                if (ex.date === today) dSum += ex.amount;
                 return matchesDate && matchesSearch;
             });
 
@@ -193,7 +192,7 @@
                 mSum += ex.amount;
                 return `
                 <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm mb-3">
-                    <div><p class="font-bold text-sm">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
+                    <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
                     <div class="flex items-center gap-2">
                         <p class="font-bold text-slate-900">₹${ex.amount}</p>
                         <button onclick="handleEdit('${ex.id}')" class="text-blue-500 text-xs bg-blue-50 px-2 py-1 rounded">Edit</button>
@@ -202,7 +201,14 @@
                 </div>`;
             }).join('');
 
-            document.getElementById('dailyTotal').innerText = `₹${dSum}`;
+            // UPDATE TOP WIDGET
+            document.getElementById('recentWidget').innerHTML = allExpenses.slice(0, 5).map(ex => `
+                <div class="flex-shrink-0 bg-slate-800 p-2 rounded-xl text-center min-w-[70px]">
+                    <p class="text-[10px] font-bold text-blue-400">₹${ex.amount}</p>
+                    <p class="text-[7px] text-slate-500 truncate w-12 mx-auto">${ex.sector}</p>
+                </div>
+            `).join('');
+
             document.getElementById('monthlyTotal').innerText = `₹${mSum}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             const pc = Math.min((mSum/monthlySalary)*100, 100).toFixed(1);
@@ -222,11 +228,7 @@
 
         function handleAddCategory() {
             const n = prompt("Enter Category Name + Emoji (e.g., 🏠 Rent):");
-            if(n) { 
-                categories.push(n); 
-                localStorage.setItem('myCats', JSON.stringify(categories)); 
-                location.reload(); 
-            }
+            if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); location.reload(); }
         }
 
         function handleSetSalary() {
@@ -250,7 +252,6 @@
             doc.save("Report.pdf");
         }
 
-        // INIT DROPDOWN
         document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
     </script>
