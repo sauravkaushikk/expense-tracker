@@ -25,7 +25,6 @@
             border-radius: 22px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        select, input { -webkit-appearance: none; }
     </style>
 
     <script type="module">
@@ -93,9 +92,9 @@
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-2">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Cloud-secured Expense Tracking</p>
-            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-white border border-gray-200 text-slate-700 p-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-transform">
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-5" alt="Google"> 
+            <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
+            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Sign in with Google
             </button>
         </div>
@@ -133,17 +132,17 @@
         <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
             <input type="hidden" id="editId">
             
-            <button onclick="addCustomCategory()" class="w-full mb-4 bg-gray-50 text-gray-500 p-3 rounded-xl text-xs font-bold border border-dashed border-gray-300 flex items-center justify-center gap-2 active:bg-gray-100 transition-all">
-                <span>➕ Add New Custom Category</span>
+            <button onclick="addCustomCategory()" class="w-full mb-4 bg-blue-50 text-blue-600 p-4 rounded-2xl text-sm font-bold border border-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                <span>➕ Add New Category</span>
             </button>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none border border-transparent focus:border-blue-100">
-                <select id="sector" onchange="toggleSubSector()" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm border border-transparent focus:border-blue-100"></select>
+                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none">
+                <select id="sector" onchange="toggleSubSector()" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm"></select>
             </div>
 
             <div id="subSectorContainer" class="hidden mb-3">
-                <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-50 border border-blue-100 outline-none text-sm font-bold text-blue-600">
+                <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-100 border border-blue-200 outline-none text-sm font-bold text-blue-800">
                     <option value="📱 Mobile Recharge">📱 Mobile Recharge</option>
                     <option value="🌐 Fiber Bill">🌐 Fiber Bill</option>
                     <option value="💳 Credit Card">💳 Credit Card</option>
@@ -170,12 +169,12 @@
 
         <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6 hidden">
             <div class="h-56 mb-4"><canvas id="expenseChart"></canvas></div>
-            <div id="breakdownList" class="space-y-3 text-xs"></div>
+            <div id="breakdownList" class="space-y-3"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-6">
-            <button onclick="exportExcel()" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold">📊 Excel</button>
-            <button onclick="exportPDF()" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold">📄 PDF</button>
+            <button onclick="exportExcel()" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold border border-green-200">📊 Excel Sheet</button>
+            <button onclick="exportPDF()" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold border border-red-200">📄 PDF Report</button>
         </div>
 
         <div id="history" class="space-y-3"></div>
@@ -195,7 +194,7 @@
         }
 
         window.addCustomCategory = function() {
-            const newCat = prompt("Enter new category with emoji (e.g., 🏠 Rent):");
+            const newCat = prompt("Enter category name + emoji (e.g., 🏠 Rent):");
             if (newCat && !categories.includes(newCat)) {
                 categories.push(newCat);
                 localStorage.setItem('myCats', JSON.stringify(categories));
@@ -209,8 +208,7 @@
         }
 
         window.saveExpense = async function() {
-            const amountInput = document.getElementById('amount');
-            const amount = parseFloat(amountInput.value);
+            const amount = parseFloat(document.getElementById('amount').value);
             const editId = document.getElementById('editId').value;
             let sector = document.getElementById('sector').value;
             if (sector === "🧾 Bills") sector = `🧾 Bill: ${document.getElementById('subSector').value}`;
@@ -220,7 +218,8 @@
             
             await window.saveToCloud(data, editId);
             
-            amountInput.value = '';
+            // Clear
+            document.getElementById('amount').value = '';
             document.getElementById('editId').value = '';
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.innerText = 'Add Expense';
@@ -261,8 +260,8 @@
                     <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
                     <div class="flex items-center gap-3">
                         <p class="font-bold">₹${ex.amount}</p>
-                        <button onclick="editEntry('${ex.id}')" class="text-blue-400 text-xs font-bold bg-blue-50 px-2 py-1 rounded">Edit</button>
-                        <button onclick="deleteFromCloud('${ex.id}')" class="text-red-400 text-xs font-bold">✕</button>
+                        <button onclick="editEntry('${ex.id}')" class="text-blue-500 font-bold text-xs bg-blue-50 px-2 py-1 rounded-lg">Edit</button>
+                        <button onclick="deleteFromCloud('${ex.id}')" class="text-red-500 font-bold text-xs px-2 py-1">✕</button>
                     </div>
                 </div>`;
             }).join('');
