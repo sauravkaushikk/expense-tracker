@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -84,8 +85,14 @@
 
             <div class="border-t border-gray-100 pt-4">
                 <p class="text-[10px] uppercase font-bold text-gray-400 mb-2 px-1">Recently Added</p>
-                <div id="recentWidget" class="flex gap-2 overflow-x-auto custom-scroll pb-1">
-                    </div>
+                <div id="recentWidget" class="flex gap-2 overflow-x-auto custom-scroll pb-1"></div>
+            </div>
+        </div>
+
+        <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6 hidden">
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center">Category Spending Comparison</p>
+            <div class="h-64 flex justify-center">
+                <canvas id="categoryPieChart"></canvas>
             </div>
         </div>
 
@@ -119,6 +126,7 @@
         const auth = firebase.auth();
 
         let allExpenses = [];
+        let categoryChart = null;
         let monthlySalary = localStorage.getItem('mySalary') || 50000;
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
 
@@ -184,16 +192,21 @@
             const search = document.getElementById('searchInput').value.toLowerCase();
             let dSum = 0;
             let mSum = 0;
+            let catSummary = {};
             
             const filtered = allExpenses.filter(ex => {
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
                 const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
+                
                 if (ex.date === today) dSum += ex.amount;
-                // Only count totals for the current month in dashboard
+                
                 const currentMonth = new Date().getMonth();
                 const currentYear = new Date().getFullYear();
                 const exDate = new Date(ex.date);
-                if (exDate.getMonth() === currentMonth && exDate.getFullYear() === currentYear) mSum += ex.amount;
+                if (exDate.getMonth() === currentMonth && exDate.getFullYear() === currentYear) {
+                    mSum += ex.amount;
+                    catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount;
+                }
                 
                 return matchesDate && matchesSearch;
             });
@@ -210,7 +223,6 @@
                 </div>`;
             }).join('');
 
-            // UPDATE TOP WIDGET (MOST RECENT 5)
             document.getElementById('recentWidget').innerHTML = allExpenses.slice(0, 5).map(ex => `
                 <div class="flex-shrink-0 bg-gray-50 border border-gray-100 p-2 rounded-xl text-center min-w-[80px]">
                     <p class="text-[11px] font-bold text-blue-600">₹${ex.amount}</p>
@@ -223,6 +235,45 @@
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             const pc = Math.min((mSum/monthlySalary)*100, 100).toFixed(1);
             document.getElementById('progressBar').style.width = pc + "%";
+
+            // Update Comparison Pie Chart
+            if (Object.keys(catSummary).length > 0) {
+                document.getElementById('chartSection').classList.remove('hidden');
+                updatePieChart(catSummary);
+            } else {
+                document.getElementById('chartSection').classList.add('hidden');
+            }
+        }
+
+        function updatePieChart(summary) {
+            const ctx = document.getElementById('categoryPieChart').getContext('2d');
+            const data = {
+                labels: Object.keys(summary),
+                datasets: [{
+                    data: Object.values(summary),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'],
+                    hoverOffset: 10
+                }]
+            };
+
+            if (categoryChart) {
+                categoryChart.data = data;
+                categoryChart.update();
+            } else {
+                categoryChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 10, weight: 'bold' }, padding: 15 }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         window.handleDelete = (id) => { if(confirm("Delete record?")) db.collection("expenses").doc(id).delete(); }
