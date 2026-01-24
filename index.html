@@ -88,14 +88,14 @@
 </head>
 <body class="bg-gray-50 text-slate-800 pb-24">
 
-    <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6">
-        <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
+    <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-2">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
-            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">
+            <p class="text-gray-400 mb-8 text-sm">Secure Daily Expense Tracking</p>
+            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold active:scale-95 transition-all">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
-                Sign in with Google
+                Continue with Google
             </button>
         </div>
     </div>
@@ -108,11 +108,10 @@
 
         <div id="dashCard" class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
             <div class="flex justify-between items-start mb-2">
-                <p id="periodLabel" class="text-slate-400 text-[10px] uppercase tracking-widest">Monthly Spend</p>
+                <p class="text-slate-400 text-[10px] uppercase tracking-widest">Monthly Spend</p>
                 <button onclick="setSalary()" class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg uppercase">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-4xl font-bold mb-4">₹0</h2>
-            
             <div class="mb-4">
                 <div class="flex justify-between text-[10px] mb-1.5 text-slate-400 uppercase">
                     <span>Budget Usage</span>
@@ -122,7 +121,6 @@
                     <div id="progressBar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
-
             <div class="flex justify-between border-t border-slate-700 pt-4">
                 <div><p class="text-[10px] text-slate-400 uppercase">Today</p><p id="dailyTotal" class="text-lg font-bold text-blue-400">₹0</p></div>
                 <div class="text-right"><p class="text-[10px] text-slate-400 uppercase">Limit</p><p id="salaryDisplay" class="text-lg font-bold">₹0</p></div>
@@ -150,7 +148,12 @@
             </div>
 
             <div class="flex gap-3 mb-4">
-                <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm"><option>UPI</option><option>Cash</option></select>
+                <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
+                    <option>UPI</option>
+                    <option>Cash</option>
+                    <option>Credit Card</option>
+                    <option>Debit Card</option>
+                </select>
                 <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
             </div>
             
@@ -159,7 +162,7 @@
             </button>
         </div>
 
-        <div class="bg-white p-4 rounded-[2rem] border border-gray-100 mb-6">
+        <div class="bg-white p-4 rounded-[2rem] border border-gray-100 mb-6 text-center">
             <div class="grid grid-cols-2 gap-2 mb-3">
                 <input id="startDate" type="date" oninput="render()" class="p-2.5 rounded-xl bg-gray-50 border-none text-[10px] outline-none">
                 <input id="endDate" type="date" oninput="render()" class="p-2.5 rounded-xl bg-gray-50 border-none text-[10px] outline-none">
@@ -173,8 +176,8 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-6">
-            <button onclick="exportExcel()" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold border border-green-200">📊 Excel Sheet</button>
-            <button onclick="exportPDF()" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold border border-red-200">📄 PDF Report</button>
+            <button onclick="exportExcel()" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold border border-green-200">📊 Excel</button>
+            <button onclick="exportPDF()" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold border border-red-200">📄 PDF</button>
         </div>
 
         <div id="history" class="space-y-3"></div>
@@ -218,12 +221,11 @@
             
             await window.saveToCloud(data, editId);
             
-            // Clear
             document.getElementById('amount').value = '';
             document.getElementById('editId').value = '';
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.innerText = 'Add Expense';
-            saveBtn.className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-blue-100 active:scale-95 transition-all";
+            saveBtn.classList.replace('bg-orange-500', 'bg-blue-600');
         }
 
         window.editEntry = (id) => {
@@ -233,7 +235,7 @@
             document.getElementById('editId').value = id;
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.innerText = 'Update Record';
-            saveBtn.className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all";
+            saveBtn.classList.replace('bg-blue-600', 'bg-orange-500');
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
