@@ -25,7 +25,6 @@
             border-radius: 22px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        .custom-scroll::-webkit-scrollbar { width: 0px; }
     </style>
 
     <script type="module">
@@ -87,15 +86,15 @@
         };
     </script>
 </head>
-<body class="bg-gray-50 text-slate-800 pb-24 custom-scroll">
+<body class="bg-gray-50 text-slate-800 pb-24">
 
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-2">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
-            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa/google.svg" class="w-5"> 
+            <p class="text-gray-400 mb-8 text-sm">Cloud-secured Expense Tracking</p>
+            <button onclick="login()" class="flex items-center justify-center gap-3 w-full bg-white border border-gray-200 text-slate-700 p-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-transform">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg" class="w-5" alt="Google"> 
                 Sign in with Google
             </button>
         </div>
@@ -136,7 +135,7 @@
                 <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none">
                 <div class="flex gap-1">
                     <select id="sector" onchange="toggleSubSector()" class="flex-grow p-4 rounded-2xl bg-gray-50 outline-none text-sm"></select>
-                    <button onclick="addCustomCategory()" class="bg-blue-600 text-white px-3 rounded-xl">+</button>
+                    <button onclick="addCustomCategory()" class="bg-blue-600 text-white px-3 rounded-xl font-bold shadow-lg shadow-blue-100">+</button>
                 </div>
             </div>
 
@@ -179,40 +178,42 @@
     <script>
         let expenses = [];
         let monthlySalary = localStorage.getItem('mySalary') || 50000;
-        let categories = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
+        let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
         let myChart = null;
 
         function init() {
-            document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            const sectorSelect = document.getElementById('sector');
+            sectorSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
         }
 
-        window.toggleSubSector = () => {
-            document.getElementById('subSectorContainer').classList.toggle('hidden', document.getElementById('sector').value !== "🧾 Bills");
-        }
-
-        window.addCustomCategory = () => {
-            const newCat = prompt("New Category (with emoji!):");
-            if(newCat && !categories.includes(newCat)) {
+        window.addCustomCategory = function() {
+            const newCat = prompt("Enter new category with emoji (e.g., 🏠 Rent):");
+            if (newCat && !categories.includes(newCat)) {
                 categories.push(newCat);
                 localStorage.setItem('myCats', JSON.stringify(categories));
-                init();
+                init(); // Refresh dropdown
             }
         }
 
-        window.saveExpense = async () => {
+        window.toggleSubSector = function() {
+            const isBill = document.getElementById('sector').value === "🧾 Bills";
+            document.getElementById('subSectorContainer').classList.toggle('hidden', !isBill);
+        }
+
+        window.saveExpense = async function() {
             const amount = parseFloat(document.getElementById('amount').value);
             const editId = document.getElementById('editId').value;
             let sector = document.getElementById('sector').value;
-            if(sector === "🧾 Bills") sector = `🧾 Bill: ${document.getElementById('subSector').value}`;
+            if (sector === "🧾 Bills") sector = `🧾 Bill: ${document.getElementById('subSector').value}`;
             
             const data = { amount, sector, method: document.getElementById('method').value, date: document.getElementById('date').value, timestamp: Date.now() };
-            if(!data.amount || !data.date) return;
+            if (!data.amount || !data.date) return;
             
             await window.saveToCloud(data, editId);
             
-            // Reset
+            // Clear inputs
             document.getElementById('amount').value = '';
             document.getElementById('editId').value = '';
             document.getElementById('saveBtn').innerText = 'Add Expense';
@@ -229,7 +230,7 @@
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        window.render = () => {
+        window.render = function() {
             const today = new Date().toISOString().split('T')[0];
             const startD = document.getElementById('startDate').value;
             const endD = document.getElementById('endDate').value;
@@ -237,10 +238,10 @@
             
             let dSum = 0, fSum = 0, sMap = {};
 
-            const filtered = window.expenses.filter(ex => {
+            const filtered = (window.expenses || []).filter(ex => {
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
                 const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
-                if(ex.date === today) dSum += ex.amount;
+                if (ex.date === today) dSum += ex.amount;
                 return matchesDate && matchesSearch;
             });
 
@@ -252,8 +253,8 @@
                     <div><p class="font-bold text-sm">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
                     <div class="flex items-center gap-3">
                         <p class="font-bold">₹${ex.amount}</p>
-                        <button onclick="editEntry('${ex.id}')" class="text-blue-400 text-xs">✎</button>
-                        <button onclick="deleteFromCloud('${ex.id}')" class="text-red-400 text-xs">✕</button>
+                        <button onclick="editEntry('${ex.id}')" class="text-blue-400 text-xs font-bold">Edit</button>
+                        <button onclick="deleteFromCloud('${ex.id}')" class="text-red-400 text-xs font-bold">✕</button>
                     </div>
                 </div>`;
             }).join('');
@@ -264,7 +265,6 @@
         function updateUI(dSum, fSum, sMap) {
             document.getElementById('dailyTotal').innerText = `₹${dSum}`;
             document.getElementById('monthlyTotal').innerText = `₹${fSum}`;
-            document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             
             const pc = Math.min((fSum / monthlySalary) * 100, 100).toFixed(1);
             document.getElementById('budgetPercent').innerText = `${pc}%`;
@@ -272,7 +272,7 @@
             bar.style.width = `${pc}%`;
             bar.className = pc > 90 ? "bg-red-500 h-full transition-all" : pc > 70 ? "bg-orange-500 h-full transition-all" : "bg-blue-500 h-full transition-all";
 
-            if(fSum > 0) {
+            if (fSum > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
                 updateChart(sMap);
                 document.getElementById('breakdownList').innerHTML = Object.entries(sMap).map(([name, val]) => {
@@ -284,7 +284,7 @@
 
         function updateChart(sMap) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
-            if(myChart) myChart.destroy();
+            if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981', '#64748b'], borderWidth: 0 }] },
@@ -308,7 +308,7 @@
         }
         window.setSalary = () => {
             const s = prompt("Salary/Budget:", monthlySalary);
-            if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); window.render(); }
+            if (s) { monthlySalary = s; localStorage.setItem('mySalary', s); window.render(); }
         }
 
         init();
