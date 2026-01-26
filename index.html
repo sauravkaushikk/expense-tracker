@@ -21,8 +21,9 @@
     <style>
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 70px; height: 70px; margin-bottom: 15px; border-radius: 18px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .custom-scroll::-webkit-scrollbar { display: none; }
-        input[type="date"]::before { content: attr(placeholder); color: #9ca3af; margin-right: 0.5em; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        input[type="date"]:focus::before, input[type="date"]:valid::before { content: ""; display: none; }
+        .budget-green { background-color: #0f172a; border-left: 4px solid #10b981; }
+        .budget-yellow { background-color: #0f172a; border-left: 4px solid #f59e0b; }
+        .budget-red { background-color: #0f172a; border-left: 4px solid #ef4444; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 pb-20 custom-scroll">
@@ -30,8 +31,8 @@
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
-            <h1 class="text-3xl font-bold mb-4 text-slate-900">Spend Guard</h1>
-            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
+            <h1 class="text-3xl font-bold mb-4">Spend Guard</h1>
+            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41LTE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Login with Google
             </button>
@@ -40,34 +41,40 @@
 
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
         <div class="flex justify-between items-center mb-6 px-1">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Hi, <span id="userName" class="text-blue-600">User</span></p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400">LOGOUT</button>
         </div>
 
-        <div class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
+        <div id="dashboardCard" class="text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-colors duration-500">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-slate-400 text-[10px] uppercase font-bold">Monthly Spend</p>
                 <button onclick="handleSetSalary()" class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-4xl font-bold mb-4">₹0</h2>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-4">
-                <div id="progressBar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <p class="text-[9px] uppercase font-bold text-slate-500">Safe-to-Spend</p>
+                    <p id="dailyLimit" class="text-lg font-bold text-green-400">₹0/day</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[9px] uppercase font-bold text-slate-500">Salary Limit</p>
+                    <p id="salaryDisplay" class="text-lg font-bold">₹0</p>
+                </div>
             </div>
-            <div class="flex justify-between border-t border-slate-700 pt-4 text-center">
-                <div><p class="text-[10px] text-slate-400 uppercase">Today</p><p id="dailyTotal" class="text-lg font-bold">₹0</p></div>
-                <div><p class="text-[10px] text-slate-400 uppercase">Salary</p><p id="salaryDisplay" class="text-lg font-bold">₹0</p></div>
+
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full transition-all duration-1000" style="width: 0%"></div>
             </div>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
             <input type="hidden" id="editId" value="">
             <button onclick="handleAddCategory()" class="w-full mb-4 bg-blue-50 text-blue-600 p-4 rounded-2xl text-sm font-bold border border-blue-100">➕ Add New Category</button>
-            
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none">
                 <select id="sector" onchange="checkBillsCategory(this.value)" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm"></select>
             </div>
-
             <div id="subSectorContainer" class="hidden mb-3">
                 <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-50 border border-blue-100 outline-none text-sm font-bold text-blue-800">
                     <option value="📱 Mobile Recharge">📱 Mobile Recharge</option>
@@ -75,53 +82,39 @@
                     <option value="💳 Credit Card">💳 Credit Card</option>
                 </select>
             </div>
-
             <div class="flex gap-3 mb-4">
                 <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
                     <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option>
                 </select>
                 <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm">
             </div>
-            <button id="saveBtn" onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg mb-4">Add Expense</button>
-
-            <div class="border-t border-gray-100 pt-4">
-                <p class="text-[10px] uppercase font-bold text-gray-400 mb-2 px-1 text-center">Recent Activity</p>
-                <div id="recentWidget" class="flex gap-2 overflow-x-auto custom-scroll pb-1"></div>
-            </div>
+            <button id="saveBtn" onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">Add Expense</button>
         </div>
 
         <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6 hidden">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center">Ranking by Spending</p>
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center">Spending Rank (Tap to set Category Budget)</p>
             <div id="chartContainer" style="height: 300px; position: relative;">
                 <canvas id="categoryBarChart"></canvas>
             </div>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Filter by Date</p>
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Select Dates</p>
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div class="flex flex-col gap-1">
                     <span class="text-[8px] font-bold text-gray-300 ml-2 uppercase">From</span>
-                    <input id="startDate" type="date" oninput="handleRender()" placeholder="Start Date" class="p-3 rounded-xl bg-gray-50 text-[10px] outline-none">
+                    <input id="startDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px] outline-none">
                 </div>
                 <div class="flex flex-col gap-1">
                     <span class="text-[8px] font-bold text-gray-300 ml-2 uppercase">To</span>
-                    <input id="endDate" type="date" oninput="handleRender()" placeholder="End Date" class="p-3 rounded-xl bg-gray-50 text-[10px] outline-none">
+                    <input id="endDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px] outline-none">
                 </div>
             </div>
-            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search Category or Method..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm">
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search History..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm">
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mb-6 px-1">
-            <button onclick="handleExcel()" class="bg-green-100 text-green-700 p-3 rounded-xl text-xs font-bold">📊 Excel</button>
-            <button onclick="handlePDF()" class="bg-red-100 text-red-700 p-3 rounded-xl text-xs font-bold">📄 PDF</button>
-        </div>
-
-        <div class="px-2 mb-4 flex justify-between items-center">
-            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">History</p>
-        </div>
         <div id="history" class="space-y-3 mb-4"></div>
-        <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-500 rounded-2xl text-[10px] font-bold uppercase tracking-widest active:bg-gray-200 transition-all hidden">See All Transactions</button>
+        <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-500 rounded-2xl text-[10px] font-bold uppercase hidden">See All</button>
     </div>
 
     <script>
@@ -141,12 +134,10 @@
         let categoryChart = null;
         let isSeeAll = false;
         let monthlySalary = localStorage.getItem('mySalary') || 50000;
+        let catBudgets = JSON.parse(localStorage.getItem('catBudgets')) || {};
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
 
-        function checkBillsCategory(val) {
-            document.getElementById('subSectorContainer').classList.toggle('hidden', val !== "🧾 Bills");
-        }
-
+        function checkBillsCategory(val) { document.getElementById('subSectorContainer').classList.toggle('hidden', val !== "🧾 Bills"); }
         function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function handleLogout() { auth.signOut(); }
 
@@ -172,161 +163,104 @@
             const date = document.getElementById('date').value;
             const editId = document.getElementById('editId').value;
             if (!amount || !date) return alert("Fill all fields!");
-
             let sector = document.getElementById('sector').value;
             if (sector === "🧾 Bills") sector = `🧾 Bill: ${document.getElementById('subSector').value}`;
-            
-            const data = {
-                amount: parseFloat(amount),
-                sector: sector,
-                method: document.getElementById('method').value,
-                date: date,
-                uid: auth.currentUser.uid,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
+            const data = { amount: parseFloat(amount), sector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             try {
-                if (editId) {
-                    await db.collection("expenses").doc(editId).update(data);
-                    document.getElementById('editId').value = "";
-                    document.getElementById('saveBtn').innerText = "Add Expense";
-                    document.getElementById('saveBtn').className = "w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg mb-4";
-                } else {
-                    await db.collection("expenses").add(data);
-                }
+                if (editId) { await db.collection("expenses").doc(editId).update(data); document.getElementById('editId').value = ""; document.getElementById('saveBtn').innerText = "Add Expense"; }
+                else { await db.collection("expenses").add(data); }
                 document.getElementById('amount').value = "";
-            } catch (e) { alert("Save Error: " + e.message); }
-        }
-
-        function toggleSeeAll() {
-            isSeeAll = !isSeeAll;
-            document.getElementById('seeAllBtn').innerText = isSeeAll ? "Show Less" : "See All Transactions";
-            handleRender();
+            } catch (e) { alert("Save Error"); }
         }
 
         function handleRender() {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const daysLeft = daysInMonth - now.getDate() + 1;
+
+            let dSum = 0, mSum = 0, catSummary = {};
             const startD = document.getElementById('startDate').value;
             const endD = document.getElementById('endDate').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
-            let dSum = 0, mSum = 0, catSummary = {};
-            
+
             const filtered = allExpenses.filter(ex => {
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
-                const matchesSearch = ex.sector.toLowerCase().includes(search) || ex.method.toLowerCase().includes(search);
-                if (ex.date === today) dSum += ex.amount;
-                
-                const currentMonth = new Date().getMonth();
-                const currentYear = new Date().getFullYear();
+                const matchesSearch = ex.sector.toLowerCase().includes(search);
+                if (ex.date === todayStr) dSum += ex.amount;
                 const exDate = new Date(ex.date);
-                if (exDate.getMonth() === currentMonth && exDate.getFullYear() === currentYear) {
+                if (exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear()) {
                     mSum += ex.amount;
                     catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount;
                 }
                 return matchesDate && matchesSearch;
             });
 
-            // Pagination Logic
             const limit = isSeeAll ? filtered.length : 10;
-            const displayed = filtered.slice(0, limit);
+            document.getElementById('history').innerHTML = filtered.slice(0, limit).map(ex => `
+                <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm mb-3">
+                    <div><p class="font-bold text-sm">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date}</p></div>
+                    <div class="flex items-center gap-2"><p class="font-bold">₹${ex.amount}</p>
+                    <button onclick="handleEdit('${ex.id}')" class="text-blue-500 text-xs">Edit</button></div>
+                </div>`).join('');
             document.getElementById('seeAllBtn').classList.toggle('hidden', filtered.length <= 10);
 
-            document.getElementById('history').innerHTML = displayed.map(ex => `
-                <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm mb-3">
-                    <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
-                    <div class="flex items-center gap-2">
-                        <p class="font-bold text-slate-900">₹${ex.amount}</p>
-                        <button onclick="handleEdit('${ex.id}')" class="text-blue-500 text-xs bg-blue-50 px-2 py-1 rounded">Edit</button>
-                        <button onclick="handleDelete('${ex.id}')" class="text-red-500 text-xs px-1">✕</button>
-                    </div>
-                </div>`).join('');
+            // Dashboard Updates
+            const pc = Math.min((mSum/monthlySalary)*100, 100);
+            const dash = document.getElementById('dashboardCard');
+            const bar = document.getElementById('progressBar');
+            dash.className = pc > 90 ? "budget-red p-6 rounded-[2.5rem] shadow-xl mb-6" : pc > 70 ? "budget-yellow p-6 rounded-[2.5rem] shadow-xl mb-6" : "budget-green p-6 rounded-[2.5rem] shadow-xl mb-6";
+            bar.className = pc > 90 ? "bg-red-500 h-full" : pc > 70 ? "bg-orange-500 h-full" : "bg-emerald-500 h-full";
+            bar.style.width = pc + "%";
 
-            document.getElementById('recentWidget').innerHTML = allExpenses.slice(0, 5).map(ex => `
-                <div class="flex-shrink-0 bg-gray-50 border border-gray-100 p-2 rounded-xl text-center min-w-[80px]">
-                    <p class="text-[11px] font-bold text-blue-600">₹${ex.amount}</p>
-                    <p class="text-[8px] text-gray-400 truncate w-16 mx-auto">${ex.sector}</p>
-                </div>`).join('');
-
-            document.getElementById('dailyTotal').innerText = `₹${dSum}`;
+            const safeToSpend = Math.max((monthlySalary - mSum) / daysLeft, 0).toFixed(0);
+            document.getElementById('dailyLimit').innerText = `₹${safeToSpend}/day`;
             document.getElementById('monthlyTotal').innerText = `₹${mSum}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
-            const pc = Math.min((mSum/monthlySalary)*100, 100).toFixed(1);
-            document.getElementById('progressBar').style.width = pc + "%";
 
             if (Object.keys(catSummary).length > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
-                updateBarChart(catSummary, mSum);
-            } else {
-                document.getElementById('chartSection').classList.add('hidden');
+                updateBarChart(catSummary);
             }
         }
 
-        function updateBarChart(summary, total) {
+        function updateBarChart(summary) {
             const ctx = document.getElementById('categoryBarChart').getContext('2d');
             const sortedKeys = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
-            const sortedData = sortedKeys.map(k => summary[k]);
-            const sortedPercentages = sortedKeys.map(k => ((summary[k]/total)*100).toFixed(1) + "%");
-
             const data = {
                 labels: sortedKeys,
-                datasets: [{ label: 'Amount', data: sortedData, backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 20 }]
+                datasets: [{ data: sortedKeys.map(k => summary[k]), backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 20 }]
             };
-
-            if (categoryChart) {
-                categoryChart.data = data;
-                categoryChart.update();
-            } else {
+            if (categoryChart) { categoryChart.data = data; categoryChart.update(); }
+            else {
                 categoryChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: data,
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => `₹${item.raw} (${sortedPercentages[item.dataIndex]})` } } },
+                    type: 'bar', data, options: {
+                        indexAxis: 'y', onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const i = elements[0].index;
+                                const cat = sortedKeys[i];
+                                const b = prompt(`Set monthly budget for ${cat}:`, catBudgets[cat] || 0);
+                                if(b) { catBudgets[cat] = parseFloat(b); localStorage.setItem('catBudgets', JSON.stringify(catBudgets)); handleRender(); }
+                            }
+                        },
+                        plugins: { legend: { display: false } },
                         scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } }
                     }
                 });
             }
         }
 
-        window.handleDelete = (id) => { if(confirm("Delete record?")) db.collection("expenses").doc(id).delete(); }
+        function toggleSeeAll() { isSeeAll = !isSeeAll; document.getElementById('seeAllBtn').innerText = isSeeAll ? "Show Less" : "See All"; handleRender(); }
         window.handleEdit = (id) => {
             const ex = allExpenses.find(e => e.id === id);
             document.getElementById('amount').value = ex.amount;
             document.getElementById('date').value = ex.date;
             document.getElementById('editId').value = id;
             document.getElementById('saveBtn').innerText = "Update Record";
-            document.getElementById('saveBtn').className = "w-full bg-orange-500 text-white p-4 rounded-2xl font-bold shadow-lg mb-4";
             window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-
-        function handleAddCategory() {
-            const n = prompt("Enter Name + Emoji (e.g., 🏠 Rent):");
-            if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); location.reload(); }
-        }
-
-        function handleSetSalary() {
-            const s = prompt("Salary:", monthlySalary);
-            if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); }
-        }
-
-        function handleExcel() {
-            const ws = XLSX.utils.json_to_sheet(allExpenses.map(e => ({ Date: e.date, Category: e.sector, Method: e.method, Amount: e.amount })));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-            XLSX.writeFile(wb, "My_Expenses.xlsx");
-        }
-
-        function handlePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const cleanData = allExpenses.map(e => [e.date, e.sector.replace(/[^\x00-\x7F]/g, ""), e.method, e.amount]);
-            doc.text("Expense Report", 14, 20);
-            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: cleanData, startY: 30 });
-            doc.save("Report.pdf");
-        }
-
+        };
+        function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); location.reload(); } }
+        function handleSetSalary() { const s = prompt("New Salary:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
         document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
     </script>
