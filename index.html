@@ -45,19 +45,20 @@
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
         </div>
 
-        <div id="dashboardCard" class="budget-card text-white mb-6">
+        <div id="dashboardCard" class="budget-card text-white mb-6 transition-all duration-500">
             <div class="flex justify-between items-start mb-2">
                 <p id="spendLabel" class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Monthly Spend</p>
-                <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Salary</button>
+                <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase tracking-tighter">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-5xl font-black mb-6 text-white tracking-tight">₹0.00</h2>
+            
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
                     <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Safe-to-Spend</p>
                     <p id="dailyLimit" class="text-lg font-bold text-emerald-400">₹0/day</p>
                 </div>
                 <div class="bg-slate-800/50 p-3 rounded-2xl text-right">
-                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Budget Limit</p>
+                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Salary Limit</p>
                     <p id="salaryDisplay" class="text-lg font-bold text-slate-100">₹0</p>
                 </div>
             </div>
@@ -86,12 +87,18 @@
             <button id="saveBtn" onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100">Add Expense</button>
         </div>
 
-        <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Search (Auto-Totals Amount)</p>
-            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search e.g. 'UPI' or 'Food UPI'..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border-none mb-4">
+        <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6 shadow-sm">
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Filter Archive & Search</p>
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search Category or Method..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border-none mb-4 shadow-inner">
             <div class="grid grid-cols-2 gap-3">
-                <input id="startDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px] border-none outline-none">
-                <input id="endDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px] border-none outline-none">
+                <div class="flex flex-col gap-1">
+                    <span class="text-[8px] font-bold text-gray-300 ml-2 uppercase tracking-tighter">From</span>
+                    <input id="startDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px] border-none outline-none">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span class="text-[8px] font-bold text-gray-300 ml-2 uppercase tracking-tighter">To</span>
+                    <input id="endDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px] border-none outline-none">
+                </div>
             </div>
         </div>
 
@@ -162,7 +169,6 @@
             const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
             const searchTerms = searchInput.split(/\s+/).filter(t => t !== "");
 
-            // Primary month filter for dashboard
             allExpenses.forEach(ex => {
                 const exDate = new Date(ex.date);
                 if (exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear()) {
@@ -176,7 +182,7 @@
                 const matchesSearch = searchTerms.every(term => entryString.includes(term));
                 
                 if (matchesDate && matchesSearch) {
-                    filteredSum += ex.amount; // SUM ONLY VISIBLE ITEMS
+                    filteredSum += ex.amount;
                     const exDate = new Date(ex.date);
                     if (exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear()) {
                         catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount;
@@ -185,10 +191,10 @@
                 return matchesDate && matchesSearch;
             });
 
-            // FIXED: Show Filtered Total if searching, else Monthly Total
-            const displayTotal = searchTerms.length > 0 || startD || endD ? filteredSum : mSum;
-            document.getElementById('spendLabel').innerText = searchTerms.length > 0 || startD || endD ? "Filtered Total" : "Monthly Spend";
-            document.getElementById('monthlyTotal').innerText = formatINR(displayTotal);
+            // FIXED: Header title and total logic restored
+            const isFiltering = searchTerms.length > 0 || startD || endD;
+            document.getElementById('spendLabel').innerText = isFiltering ? "Filtered Total" : "Monthly Spend";
+            document.getElementById('monthlyTotal').innerText = formatINR(isFiltering ? filteredSum : mSum);
 
             document.getElementById('dailyLimit').innerText = formatINR(Math.max((monthlySalary - mSum) / daysLeft, 0)).split('.')[0] + "/day";
             document.getElementById('salaryDisplay').innerText = formatINR(monthlySalary).split('.')[0];
