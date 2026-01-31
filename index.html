@@ -33,7 +33,7 @@
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
             <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
-            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
+            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41IDE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Sign in with Google
             </button>
@@ -77,7 +77,6 @@
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
-            <input type="hidden" id="editId" value="">
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <input id="amount" type="number" step="0.01" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none text-lg font-bold border-none">
                 <select id="sector" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm font-bold border-none"></select>
@@ -93,7 +92,7 @@
 
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6">
             <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Filter Archive & Search</p>
-            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search e.g. 'UPI' or 'Food UPI'..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border-none mb-4">
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search e.g. 'Bills' or 'Credit Card'..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border-none mb-4">
             <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1">
                     <span class="text-[8px] font-bold text-gray-300 ml-2 uppercase">From</span>
@@ -106,20 +105,11 @@
             </div>
         </div>
 
-        <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6 hidden">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Spending Ranking</p>
-            <div id="chartWrapper"><canvas id="categoryBarChart"></canvas></div>
-        </div>
-
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6">
             <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Download Data Reports</p>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="handleExcel()" class="bg-green-50 text-green-700 p-4 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-green-100 active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <span>📊 EXCEL</span>
-                </button>
-                <button onclick="handlePDF()" class="bg-red-50 text-red-700 p-4 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-red-100 active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <span>📄 PDF</span>
-                </button>
+                <button onclick="handleExcel()" class="bg-green-50 text-green-700 p-4 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-green-100">📊 EXCEL</button>
+                <button onclick="handlePDF()" class="bg-red-50 text-red-700 p-4 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-red-100">📄 PDF</button>
             </div>
         </div>
 
@@ -141,9 +131,15 @@
         const auth = firebase.auth();
 
         let allExpenses = [];
-        let categoryChart = null, isSeeAll = false, mTotalStored = 0;
+        let isSeeAll = false, mTotalStored = 0;
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
-        let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "🧾 Bills", "📺 OTT Subscription", "📦 Others"];
+        
+        // RESTORED SUB-CATEGORIES
+        let categories = JSON.parse(localStorage.getItem('myCats')) || [
+            "🍔 Food", "🚗 Travel", "🛍️ Shopping", 
+            "🧾 Bills: Credit Card", "🧾 Bills: Mobile Recharge", 
+            "🧾 Bills: Electricity", "🧾 Bills: Water", "🏠 Rent", "📦 Others"
+        ];
 
         const formatINR = (num) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(num);
 
@@ -177,7 +173,7 @@
             const now = new Date();
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
-            let mSum = 0, filteredSum = 0, catSummary = {};
+            let mSum = 0, filteredSum = 0;
             
             const startD = document.getElementById('startDate').value;
             const endD = document.getElementById('endDate').value;
@@ -194,14 +190,7 @@
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
                 const entryString = `${ex.sector} ${ex.method}`.toLowerCase();
                 const matchesSearch = searchTerms.every(term => entryString.includes(term));
-                
-                if (matchesDate && matchesSearch) {
-                    filteredSum += ex.amount;
-                    const exDate = new Date(ex.date);
-                    if (exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear()) {
-                        catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount;
-                    }
-                }
+                if (matchesDate && matchesSearch) { filteredSum += ex.amount; }
                 return matchesDate && matchesSearch;
             });
 
@@ -217,81 +206,46 @@
             document.getElementById('progressBar').style.width = pc + "%";
             document.getElementById('progressBar').className = "h-full " + (pc > 90 ? 'bg-red-500' : pc > 70 ? 'bg-orange-500' : 'bg-blue-500');
 
-            const limit = isSeeAll ? filtered.length : 10;
-            document.getElementById('history').innerHTML = filtered.slice(0, limit).map(ex => `
+            document.getElementById('history').innerHTML = filtered.slice(0, isSeeAll ? filtered.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-gray-50">
                     <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
                     <p class="font-black text-slate-800">${formatINR(ex.amount)}</p>
                 </div>`).join('');
             document.getElementById('seeAllBtn').classList.toggle('hidden', filtered.length <= 10);
-            
-            if (Object.keys(catSummary).length > 0) {
-                document.getElementById('chartSection').classList.remove('hidden');
-                updateBarChart(catSummary, mSum);
-            }
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        function updateBarChart(summary, total) {
-            const ctx = document.getElementById('categoryBarChart').getContext('2d');
-            const sortedKeys = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
-            const chartHeight = Math.max(200, sortedKeys.length * 45); 
-            document.getElementById('chartWrapper').style.height = `${chartHeight}px`;
-            const data = { labels: sortedKeys, datasets: [{ data: sortedKeys.map(k => summary[k]), backgroundColor: '#3b82f6', borderRadius: 12, barThickness: 24 }] };
-            if (categoryChart) {
-                categoryChart.data = data;
-                categoryChart.options.plugins.tooltip.callbacks.label = (item) => `${formatINR(item.raw)} (${((item.raw / total) * 100).toFixed(1)}%)`;
-                categoryChart.update();
-            } else {
-                categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => `${formatINR(item.raw)} (${((item.raw / total) * 100).toFixed(1)}%)` } } }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } });
-            }
-        }
-
         function handleEmailSummary() {
-            const now = new Date();
-            const monthName = now.toLocaleString('default', { month: 'long' });
-            let body = `Month: ${monthName} ${now.getFullYear()}\nTotal: ${formatINR(mTotalStored)}\nBudget: ${formatINR(monthlySalary)}\n\n--- CATEGORIES ---\n`;
-            const catSum = {};
-            allExpenses.filter(ex => {
-                const d = new Date(ex.date);
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-            }).forEach(ex => catSum[ex.sector] = (catSum[ex.sector] || 0) + ex.amount);
-            Object.keys(catSum).sort((a,b) => catSum[b] - catSum[a]).forEach(k => body += `${k}: ${formatINR(catSum[k])}\n`);
-            window.location.href = `mailto:?subject=Spend Guard Report&body=${encodeURIComponent(body)}`;
+            const body = `Total: ${formatINR(mTotalStored)}\nBudget: ${formatINR(monthlySalary)}`;
+            window.location.href = `mailto:?subject=Monthly Spending&body=${encodeURIComponent(body)}`;
         }
 
         function handleExcel() {
             const ws = XLSX.utils.json_to_sheet(allExpenses.map(e => ({ Date: e.date, Category: e.sector, Method: e.method, Amount: e.amount })));
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-            XLSX.writeFile(wb, "Full_Report.xlsx");
+            XLSX.writeFile(wb, "Report.xlsx");
         }
 
         function handlePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const data = allExpenses.map(e => [e.date, e.sector.replace(/[^\x00-\x7F]/g, ""), e.method, e.amount]);
-            doc.text("Full Expense Report", 14, 20);
-            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: data, startY: 30 });
-            doc.save("Full_Report.pdf");
+            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: data });
+            doc.save("Report.pdf");
         }
 
         function toggleSeeAll() { isSeeAll = !isSeeAll; document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse" : "Expand All"; handleRender(); }
+        function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); } }
         function handleManageCategoryBudgets() {
             const menu = categories.map((c, i) => `${i+1}. ${c}`).join('\n');
             const choice = prompt(`Select #:\n\n${menu}`);
             if(choice) {
                 const index = parseInt(choice) - 1, cat = categories[index];
                 const action = prompt(`Manage "${cat}":\n1. Set Budget\n2. Delete`);
-                if(action === "1") {
-                    const b = prompt(`New Budget:`);
-                    if(b) { let buds = JSON.parse(localStorage.getItem('catBudgets') || '{}'); buds[cat] = parseFloat(b); localStorage.setItem('catBudgets', JSON.stringify(buds)); handleRender(); }
-                } else if(action === "2") {
-                    if(confirm(`Delete "${cat}"?`)) { categories.splice(index, 1); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); }
-                }
+                if(action === "2" && confirm(`Delete "${cat}"?`)) { categories.splice(index, 1); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); }
             }
         }
-        function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); } }
         function handleSetSalary() { const s = prompt("Salary limit:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
     </script>
