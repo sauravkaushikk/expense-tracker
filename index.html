@@ -44,7 +44,6 @@
     </div>
 
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
-        
         <div class="flex justify-between items-center mb-6 px-1">
             <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
@@ -58,7 +57,7 @@
             <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
             <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
                 <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
-                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Analyzing...</p>
+                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Syncing...</p>
             </div>
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
@@ -139,14 +138,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // PERSISTENT DATA
-        let categories = JSON.parse(localStorage.getItem('myCats'));
-        if (!categories || categories.length === 0) {
-            categories = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
-            localStorage.setItem('myCats', JSON.stringify(categories));
-        }
-
-        let allExpenses = [], filteredExpenses = [], monthlySalary = localStorage.getItem('mySalary') || 32000;
+        // Initial default state
+        let categories = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
+        let allExpenses = [], filteredExpenses = [], monthlySalary = 32000;
         let categoryChart = null, isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
 
         auth.onAuthStateChanged(user => {
@@ -154,12 +148,44 @@
                 document.getElementById('loginPage').classList.add('hidden');
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
+
+                // 1. CLOUD SYNC: Fetch User Settings (Categories & Salary)
+                const userRef = db.collection('user_settings').doc(user.uid);
+                userRef.onSnapshot(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if(data.categories) categories = data.categories;
+                        if(data.salary) monthlySalary = data.salary;
+                        
+                        // Update local storage as backup
+                        localStorage.setItem('myCats', JSON.stringify(categories));
+                        localStorage.setItem('mySalary', monthlySalary);
+                        handleRender(); // Re-render with new categories
+                    } else {
+                        // First time? Save defaults to server
+                        saveUserSettings();
+                    }
+                });
+
+                // 2. Fetch Expenses
                 db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
                     allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                     handleRender();
                 });
-            } else { document.getElementById('loginPage').classList.remove('hidden'); }
+            } else { 
+                document.getElementById('loginPage').classList.remove('hidden'); 
+            }
         });
+
+        // Function to push updates to Firebase
+        function saveUserSettings() {
+            if (auth.currentUser) {
+                db.collection('user_settings').doc(auth.currentUser.uid).set({
+                    categories: categories,
+                    salary: monthlySalary
+                }, { merge: true });
+            }
+        }
 
         function toggleSubCategory() { 
             const isBills = document.getElementById('sector').value === "Bills";
@@ -175,32 +201,27 @@
             document.getElementById('amount').value = "";
         }
 
-        async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
-
         function handleRender() {
             const now = new Date();
             const daysLeft = Math.max(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1, 1);
-            let mSum = 0, lastMSum = 0;
-            let fSum = 0;
+            let mSum = 0, lastMSum = 0, fSum = 0;
             activeCatData = {};
             
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
-            // Month Totals for Dashboard
             allExpenses.forEach(ex => {
                 const exD = new Date(ex.date);
                 if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
                 if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
             });
 
-            // "Current Month Only" Default Logic
+            // Logic: Default view = Current Month. Filtered view = Search/Date range.
             const isDefaultView = !sDate && !eDate && terms.length === 0;
 
             filteredExpenses = allExpenses.filter(ex => {
                 const exDate = new Date(ex.date);
                 
-                // If Default View -> Show Current Month Only
                 if (isDefaultView) {
                     const isCurrentMonth = exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear();
                     if (isCurrentMonth) {
@@ -210,7 +231,6 @@
                     return isCurrentMonth;
                 }
 
-                // If Filtered -> Show Matching Data
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
                 const combined = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
                 const matchSearch = terms.every(t => combined.includes(t));
@@ -227,10 +247,13 @@
             document.getElementById('monthlyTotal').innerText = `₹${globalFilteredSum.toLocaleString('en-IN')}`;
             document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
+            
+            // Populate Dropdown (now synced from server)
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            
             document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
 
-            // Trend
+            // Trend Logic
             const diff = mSum - lastMSum;
             if (lastMSum > 0) {
                 const perc = Math.abs(((diff/lastMSum)*100).toFixed(0));
@@ -248,7 +271,7 @@
             document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
             document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse History" : "Expand History";
 
-            // Chart
+            // Graph
             if (Object.keys(activeCatData).length > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
                 updateChart(activeCatData);
@@ -265,16 +288,34 @@
             
             const data = { labels, datasets: [{ data: labels.map(l => summary[l]), backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 20 }] };
             
-            if (categoryChart) categoryChart.destroy();
+            if (categoryChart) categoryChart.destroy(); 
             categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } });
         }
 
-        async function deleteEntry(id) { if(confirm("Delete this?")) await db.collection("expenses").doc(id).delete(); }
-        function handleSetSalary() { const s = prompt("Salary:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
-        function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); } }
+        async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
+        
+        function handleSetSalary() { 
+            const s = prompt("Salary:"); 
+            if(s) { 
+                monthlySalary = s; 
+                saveUserSettings(); // Sync to server
+                handleRender(); 
+            } 
+        }
+        
+        function handleAddCategory() { 
+            const n = prompt("New Category:"); 
+            if(n) { 
+                categories.push(n); 
+                saveUserSettings(); // Sync to server
+                handleRender(); 
+            } 
+        }
+        
         function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
         function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
         function closeModal() { document.getElementById('manageModal').classList.remove('active'); }
+        
         function renderManageList() {
             const q = document.getElementById('catSearch').value.toLowerCase();
             document.getElementById('catList').innerHTML = categories.filter(c => c.toLowerCase().includes(q)).map(c => `
@@ -283,77 +324,58 @@
                     <button onclick="removeCat('${c}')" class="text-red-500 font-bold text-xs">Delete</button>
                 </div>`).join('');
         }
-        function removeCat(c) { categories = categories.filter(i => i !== c); localStorage.setItem('myCats', JSON.stringify(categories)); renderManageList(); handleRender(); }
+        
+        function removeCat(c) { 
+            if(confirm("Delete category?")) { 
+                categories = categories.filter(i => i !== c); 
+                saveUserSettings(); // Sync to server
+                renderManageList(); 
+                handleRender(); 
+            } 
+        }
+        
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
         
         function exportExcel() {
             const ws = XLSX.utils.json_to_sheet(filteredExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
-
+        
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // 1. BRANDED HEADER
-            doc.setFontSize(22);
-            doc.text("Spend Guard Pro Report", 14, 20);
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+            // Branding
+            doc.setFontSize(22); doc.text("Spend Guard Pro Report", 14, 20);
+            doc.setFontSize(10); doc.setTextColor(100); doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+            doc.setDrawColor(200); doc.line(14, 32, 196, 32);
             
-            doc.setDrawColor(200);
-            doc.line(14, 32, 196, 32);
-            
-            // 2. FINANCIAL SUMMARY
-            doc.setFontSize(12);
-            doc.setTextColor(0);
-            doc.text("FINANCIAL SUMMARY", 14, 42);
-            
-            doc.setFontSize(10);
-            doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
+            // Summary
+            doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
+            doc.setFontSize(10); doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
             doc.text(`Total Spent (View): Rs. ${globalFilteredSum}`, 14, 57);
             
             const remaining = monthlySalary - globalFilteredSum;
-            
-            // Color Logic: Red if Negative, Green if Positive
             doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0); 
             doc.text(`Remaining Balance: Rs. ${remaining}`, 14, 64);
             doc.setTextColor(0);
 
-            // 3. TABLE
             const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
-            doc.autoTable({ 
-                head: [['Date', 'Category', 'Method', 'Amount']], 
-                body: rows, 
-                startY: 75,
-                theme: 'striped',
-                headStyles: { fillColor: [15, 23, 42] } 
-            });
+            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: rows, startY: 75, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
 
-            // 4. SORTED BAR GRAPH
+            // Sorted Graph
             let y = doc.lastAutoTable.finalY + 20;
             if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(12); doc.text("SPENDING BREAKDOWN (Descending)", 14, y);
             
-            doc.setFontSize(12);
-            doc.text("SPENDING BREAKDOWN (Descending)", 14, y);
-            
-            // Sort Descending for the PDF Graph
             const sortedKeys = Object.keys(activeCatData).sort((a,b) => activeCatData[b] - activeCatData[a]);
-            
             sortedKeys.forEach((l, i) => {
                 let barY = y + 10 + (i * 10);
                 if (barY > 280) { doc.addPage(); y = 20; barY = 30; }
-                
-                doc.setFontSize(9);
-                doc.text(`${sanitize(l)}: Rs.${activeCatData[l]}`, 14, barY);
-                
-                // Draw Bar
+                doc.setFontSize(9); doc.text(`${sanitize(l)}: Rs.${activeCatData[l]}`, 14, barY);
                 doc.setFillColor(59, 130, 246);
-                let width = (activeCatData[l] / globalFilteredSum) * 100;
-                doc.rect(80, barY - 3, width, 4, 'F');
+                doc.rect(80, barY - 3, (activeCatData[l]/globalFilteredSum)*100, 4, 'F');
             });
-            
             doc.save("SpendGuard_Branded_Report.pdf");
         }
 
