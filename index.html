@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spend Guard Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -56,7 +59,7 @@
             <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
             <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
                 <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
-                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase">Analyzing...</p>
+                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Analyzing...</p>
             </div>
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
@@ -99,6 +102,11 @@
             <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
         </div>
 
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">📊 Excel Export</button>
+            <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">📄 PDF Report</button>
+        </div>
+
         <div class="bg-white p-6 rounded-[2rem] border mb-6">
             <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search (e.g. Food UPI)..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 border-none outline-none">
             <div class="grid grid-cols-2 gap-3">
@@ -121,7 +129,8 @@
         const db = firebase.firestore(), auth = firebase.auth();
 
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
-        let allExpenses = [], monthlySalary = localStorage.getItem('mySalary') || 32000, categoryChart = null, isSeeAll = false;
+        let allExpenses = [], filteredExpenses = [], monthlySalary = localStorage.getItem('mySalary') || 32000, categoryChart = null, isSeeAll = false;
+        let globalMonthlySpend = 0;
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -140,10 +149,9 @@
         async function handleSaveExpense() {
             const amount = document.getElementById('amount').value, date = document.getElementById('date').value;
             const sector = document.getElementById('sector').value, sub = document.getElementById('subSector').value;
-            const method = document.getElementById('method').value;
             const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
             if (!amount || !date) return alert("Fill details");
-            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: method, date, uid: auth.currentUser.uid });
+            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
             document.getElementById('amount').value = "";
         }
 
@@ -154,7 +162,6 @@
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
             let mSum = 0, lastMSum = 0, filteredSum = 0, catSummary = {};
-            
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const searchTerms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t !== '');
 
@@ -164,17 +171,13 @@
                 if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
             });
 
-            const filtered = allExpenses.filter(ex => {
+            globalMonthlySpend = mSum;
+
+            filteredExpenses = allExpenses.filter(ex => {
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
-                
-                // Deep Search Logic: Check if every typed word exists somewhere in the entry
                 const combinedData = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
                 const matchSearch = searchTerms.every(term => combinedData.includes(term));
-
-                if (matchDate && matchSearch) { 
-                    filteredSum += ex.amount; 
-                    catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount; 
-                }
+                if (matchDate && matchSearch) { filteredSum += ex.amount; catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount; }
                 return matchDate && matchSearch;
             });
 
@@ -191,13 +194,13 @@
                 document.getElementById('trendIcon').className = `w-2 h-2 rounded-full ${diff > 0 ? 'bg-red-400' : 'bg-emerald-400'}`;
             }
 
-            document.getElementById('history').innerHTML = filtered.slice(0, isSeeAll ? filtered.length : 10).map(ex => `
+            document.getElementById('history').innerHTML = filteredExpenses.slice(0, isSeeAll ? filteredExpenses.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
                     <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
                     <div class="flex items-center gap-4"><p class="font-black">₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
                 </div>`).join('');
             
-            document.getElementById('seeAllBtn').classList.toggle('hidden', filtered.length <= 10);
+            document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
             if (Object.keys(catSummary).length > 0) { document.getElementById('chartSection').classList.remove('hidden'); updateChart(catSummary); }
         }
 
@@ -208,6 +211,56 @@
             const data = { labels, datasets: [{ data: labels.map(l => summary[l]), backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 20 }] };
             if (categoryChart) { categoryChart.data = data; categoryChart.update(); }
             else { categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } }); }
+        }
+
+        function exportExcel() {
+            const data = filteredExpenses.map(ex => ({ Date: ex.date, Category: ex.sector, Method: ex.method, Amount: ex.amount }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+            XLSX.writeFile(wb, "SpendGuard_Report.xlsx");
+        }
+
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // PDF Header
+            doc.setFontSize(22);
+            doc.text("Spend Guard Pro", 14, 20);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Report Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+            
+            // Summary Block
+            doc.setDrawColor(200);
+            doc.line(14, 32, 196, 32);
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text("MONTHLY SUMMARY", 14, 42);
+            
+            doc.setFontSize(10);
+            doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
+            doc.text(`Total Monthly Spend: Rs. ${globalMonthlySpend}`, 14, 57);
+            
+            const remaining = monthlySalary - globalMonthlySpend;
+            doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0); // Red if over budget, Green if under
+            doc.text(`Remaining Balance: Rs. ${remaining}`, 14, 64);
+            
+            doc.setTextColor(0);
+            doc.text("-----------------------------------------------------------------------------------------------------", 14, 70);
+
+            // Table
+            const rows = filteredExpenses.map(ex => [ex.date, ex.sector, ex.method, `Rs. ${ex.amount}`]);
+            doc.autoTable({ 
+                head: [['Date', 'Category', 'Method', 'Amount']], 
+                body: rows, 
+                startY: 75,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 23, 42] }
+            });
+            
+            doc.save("SpendGuard_Detailed_Report.pdf");
         }
 
         function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
