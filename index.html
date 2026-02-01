@@ -20,7 +20,7 @@
     <style>
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 80px; height: 80px; margin-bottom: 20px; border-radius: 22px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .custom-scroll::-webkit-scrollbar { display: none; }
-        .budget-card { background-color: #0f172a; border-radius: 2.5rem; padding: 1.75rem; border-left: 6px solid #3b82f6; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4); transition: all 0.4s ease; }
+        .budget-card { background-color: #0f172a; border-radius: 2.5rem; padding: 1.75rem; border-left: 6px solid #3b82f6; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4); }
         .budget-warning { border-left-color: #f59e0b; }
         .budget-danger { border-left-color: #ef4444; }
         #chartWrapper { position: relative; width: 100%; transition: height 0.3s ease; }
@@ -32,8 +32,7 @@
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
-            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
+            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg mt-6">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDOTAwIiBkPSJNMjQgOS41Yy0zLjkgMC03LjQgMS40LTEwLjIgMy45bC03LjctNy43QzExLjMgMi4xIDE3LjEgMCAyNCAwYzYuOSAwIDEyLjcgMi4xIDE3LjUgNS43bC03LjcgNy43Yy0yLjgtMi41LTYuMy0zLjktOS44LTMuOXoiLz48cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNNDQuNSAyMGgtMjB2OGgxMS41Yy0xLjUgNC40LTYuMSA3LjUtMTEuNSA3LjUtNi45IDAtMTIuNS01LjYtMTIuNS0xMi41UzE3LjEgMTAuNSAyNCAxMC41YzMuOSAwIDcuNCAxLjQgMTAuMiAzLjlMNDEuOCA2LjdDMzcuMS00LjYgMzEtMi41IDI0LTIuNSAxMi4xLTIuNSA0LjgtOS44IDQuOCAxOWMwIDkuMiA3LjMtMTYuNSAxNi41IDE2LjVzMTYuNS03LjMgMTYuNS0xNi41Yy0uMS0uOS0uMS0xLjgtLjMtMi41eiIvPjxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik02LjcgMTQuMmwyLjQgMTRjMS41LTMuNyA0LjctNi44IDguNS04LjJsLTMuMS0xMS4zYy0zLjggMS40LTcuMSA0LjQtNy44IDUuNXoiLz48cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjQgNDguMWMtNi45IDAtMTIuNy0yLjEtMTcuNS01LjdsNy43LTcuN2MyLjggMi41IDYuMyAzLjkgOS44IDMuOSAzLjkgMCA3LjQtMS40IDEwLjItMy45bDcuNyA3LjdDMzYuNyA0NS45IDMxIDQ4LjEgMjQgNDguMXoiLz48L3N2Zz4=" class="w-6 h-6">
                 Sign in with Google
             </button>
@@ -52,12 +51,10 @@
                 <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
-            
             <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
                 <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
                 <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Calculating trend...</p>
             </div>
-
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
                     <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Safe-to-Spend</p>
@@ -73,20 +70,18 @@
             </div>
         </div>
 
+        <div class="flex gap-3 mb-6">
+            <button onclick="handleAddCategory()" class="flex-1 bg-white border border-gray-100 p-4 rounded-2xl text-[10px] font-bold text-slate-600 shadow-sm uppercase">➕ Category</button>
+            <button onclick="handleManageCategoryBudgets()" class="flex-1 bg-white border border-gray-100 p-4 rounded-2xl text-[10px] font-bold text-blue-600 shadow-sm uppercase">🎯 Manage</button>
+        </div>
+
         <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6">
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <input id="amount" type="number" step="0.01" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none text-lg font-bold border-none">
-                <select id="sector" onchange="toggleSubCategory()" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm font-bold border-none">
-                    <option>🍔 Food</option>
-                    <option>🚗 Travel</option>
-                    <option>🛍️ Shopping</option>
-                    <option value="Bills">🧾 Bills</option>
-                    <option>📦 Others</option>
-                </select>
+                <select id="sector" onchange="toggleSubCategory()" class="p-4 rounded-2xl bg-gray-50 outline-none text-sm font-bold border-none"></select>
             </div>
 
             <div id="subCategoryContainer" class="hidden mb-4">
-                <p class="text-[8px] font-bold text-gray-400 uppercase ml-2 mb-1">Sub-Category</p>
                 <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-50 text-blue-700 outline-none text-sm font-bold border-none">
                     <option value="💳 Credit Card">💳 Credit Card</option>
                     <option value="📱 Mobile Recharge">📱 Mobile Recharge</option>
@@ -102,12 +97,12 @@
                 </select>
                 <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 outline-none text-sm font-bold border-none">
             </div>
-            <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">Add Expense</button>
+            <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">Add Expense</button>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest uppercase font-black">Archive Filters</p>
-            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search e.g. 'Credit Card'..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border-none mb-4">
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Archive Filters</p>
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search e.g. 'Bills'..." class="w-full p-4 rounded-xl bg-gray-50 outline-none text-sm border-none mb-4">
             <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1">
                     <span class="text-[8px] font-bold text-gray-300 ml-2 uppercase">From</span>
@@ -121,12 +116,12 @@
         </div>
 
         <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-6 hidden">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Spending Breakdown</p>
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Spending Ranking</p>
             <div id="chartWrapper"><canvas id="categoryBarChart"></canvas></div>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border border-gray-100 mb-6">
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Download Data</p>
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-4 text-center tracking-widest">Data Reports</p>
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="handleExcel()" class="bg-green-50 text-green-700 p-4 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-green-100">📊 EXCEL</button>
                 <button onclick="handlePDF()" class="bg-red-50 text-red-700 p-4 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-red-100">📄 PDF</button>
@@ -153,8 +148,9 @@
         let allExpenses = [];
         let categoryChart = null, isSeeAll = false;
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
+        let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
 
-        const formatINR = (num) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(num);
+        const formatINR = (num) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(num);
 
         function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function handleLogout() { auth.signOut(); }
@@ -193,42 +189,30 @@
 
         function handleRender() {
             const now = new Date();
-            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
+            const daysLeft = Math.max(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1, 1);
             let mSum = 0, lastMSum = 0, filteredSum = 0, catSummary = {};
             
             const startD = document.getElementById('startDate').value;
             const endD = document.getElementById('endDate').value;
             const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
-            const searchTerms = searchInput.split(/\s+/).filter(t => t !== "");
-
-            // Trending calculation logic
-            const prevMonth = (now.getMonth() === 0) ? 11 : now.getMonth() - 1;
-            const prevYear = (now.getMonth() === 0) ? now.getFullYear() - 1 : now.getFullYear();
 
             allExpenses.forEach(ex => {
                 const exDate = new Date(ex.date);
-                if (exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear()) { mSum += ex.amount; }
-                if (exDate.getMonth() === prevMonth && exDate.getFullYear() === prevYear) { lastMSum += ex.amount; }
+                if (exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear()) mSum += ex.amount;
+                if (exDate.getMonth() === (now.getMonth() === 0 ? 11 : now.getMonth() - 1)) lastMSum += ex.amount;
             });
 
-            // Update Comparison Text
             const diff = mSum - lastMSum;
             const pText = document.getElementById('compareText');
-            const pIcon = document.getElementById('trendIcon');
             if (lastMSum > 0) {
-                const perc = ((diff / lastMSum) * 100).toFixed(0);
-                pText.innerText = diff > 0 ? `${perc}% MORE THAN LAST MONTH` : `${Math.abs(perc)}% SAVED VS LAST MONTH`;
-                pIcon.className = diff > 0 ? "w-2 h-2 rounded-full bg-red-400" : "w-2 h-2 rounded-full bg-emerald-400";
-            } else {
-                pText.innerText = "STARTING FIRST TRACKED MONTH";
-                pIcon.className = "w-2 h-2 rounded-full bg-blue-400";
+                const perc = Math.abs(((diff / lastMSum) * 100).toFixed(0));
+                pText.innerText = diff > 0 ? `${perc}% MORE THAN LAST MONTH` : `${perc}% SAVED VS LAST MONTH`;
+                document.getElementById('trendIcon').className = `w-2 h-2 rounded-full ${diff > 0 ? 'bg-red-400' : 'bg-emerald-400'}`;
             }
 
             const filtered = allExpenses.filter(ex => {
                 const matchesDate = (!startD || ex.date >= startD) && (!endD || ex.date <= endD);
-                const entryString = `${ex.sector} ${ex.method}`.toLowerCase();
-                const matchesSearch = searchTerms.every(term => entryString.includes(term));
+                const matchesSearch = !searchInput || ex.sector.toLowerCase().includes(searchInput);
                 if (matchesDate && matchesSearch) {
                     filteredSum += ex.amount;
                     catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount;
@@ -236,62 +220,42 @@
                 return matchesDate && matchesSearch;
             });
 
-            const isFiltering = searchTerms.length > 0 || startD || endD;
-            document.getElementById('spendLabel').innerText = isFiltering ? "Filtered Total" : "Monthly Spend";
+            const isFiltering = searchInput || startD || endD;
             document.getElementById('monthlyTotal').innerText = formatINR(isFiltering ? filteredSum : mSum);
-            document.getElementById('dailyLimit').innerText = formatINR(Math.max((monthlySalary - mSum) / daysLeft, 0)).split('.')[0] + "/day";
-            document.getElementById('salaryDisplay').innerText = formatINR(monthlySalary).split('.')[0];
-
-            const pc = Math.min((mSum/monthlySalary)*100, 100);
-            document.getElementById('progressBar').style.width = pc + "%";
-            document.getElementById('progressBar').className = "h-full " + (pc > 90 ? 'bg-red-500' : pc > 70 ? 'bg-orange-500' : 'bg-blue-500');
+            document.getElementById('dailyLimit').innerText = formatINR(Math.max((monthlySalary - mSum) / daysLeft, 0)) + "/day";
+            document.getElementById('salaryDisplay').innerText = formatINR(monthlySalary);
+            document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
             document.getElementById('history').innerHTML = filtered.slice(0, isSeeAll ? filtered.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-gray-50">
                     <div><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} | ${ex.method}</p></div>
                     <p class="font-black text-slate-800">${formatINR(ex.amount)}</p>
                 </div>`).join('');
-            document.getElementById('seeAllBtn').classList.toggle('hidden', filtered.length <= 10);
             
             if (Object.keys(catSummary).length > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
                 updateBarChart(catSummary);
-            } else {
-                document.getElementById('chartSection').classList.add('hidden');
             }
         }
 
         function updateBarChart(summary) {
             const ctx = document.getElementById('categoryBarChart').getContext('2d');
             const sortedKeys = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
-            const chartHeight = Math.max(200, sortedKeys.length * 45); 
-            document.getElementById('chartWrapper').style.height = `${chartHeight}px`;
-            const data = { labels: sortedKeys, datasets: [{ data: sortedKeys.map(k => summary[k]), backgroundColor: '#3b82f6', borderRadius: 12, barThickness: 24 }] };
-            if (categoryChart) {
-                categoryChart.data = data;
-                categoryChart.update();
-            } else {
-                categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } });
-            }
+            const data = { labels: sortedKeys, datasets: [{ data: sortedKeys.map(k => summary[k]), backgroundColor: '#3b82f6', borderRadius: 12 }] };
+            if (categoryChart) { categoryChart.data = data; categoryChart.update(); }
+            else { categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); }
         }
 
-        function handleExcel() {
-            const ws = XLSX.utils.json_to_sheet(allExpenses.map(e => ({ Date: e.date, Category: e.sector, Method: e.method, Amount: e.amount })));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-            XLSX.writeFile(wb, "Report.xlsx");
+        function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); } }
+        function handleManageCategoryBudgets() {
+            const menu = categories.map((c, i) => `${i+1}. ${c}`).join('\n');
+            const choice = prompt(`Enter number to delete:\n${menu}`);
+            if(choice) { categories.splice(parseInt(choice)-1, 1); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); }
         }
-
-        function handlePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const data = allExpenses.map(e => [e.date, e.sector.replace(/[^\x00-\x7F]/g, ""), e.method, e.amount]);
-            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: data });
-            doc.save("Report.pdf");
-        }
-
-        function toggleSeeAll() { isSeeAll = !isSeeAll; document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse" : "Expand All"; handleRender(); }
-        function handleSetSalary() { const s = prompt("Salary:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
+        function handleSetSalary() { const s = prompt("Salary limit:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
+        function handleExcel() { const ws = XLSX.utils.json_to_sheet(allExpenses); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Report.xlsx"); }
+        function handlePDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: allExpenses.map(e => [e.date, e.sector, e.method, e.amount]) }); doc.save("Report.pdf"); }
+        function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
     </script>
 </body>
