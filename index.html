@@ -17,7 +17,6 @@
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 80px; height: 80px; margin-bottom: 20px; border-radius: 22px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .custom-scroll::-webkit-scrollbar { display: none; }
         .budget-card { background-color: #0f172a; border-radius: 2.5rem; padding: 1.75rem; border-left: 6px solid #3b82f6; }
-        #chartWrapper { position: relative; width: 100%; transition: height 0.3s ease; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
         .modal.active { display: flex; }
     </style>
@@ -39,35 +38,30 @@
             <h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
             <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
             <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6">
-                Sign in with Google
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6"> Sign in with Google
             </button>
         </div>
     </div>
 
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
         <div class="flex justify-between items-center mb-6 px-1">
-            <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
+            <p class="text-xs font-bold text-gray-400 uppercase">User: <span id="userName" class="text-blue-600">...</span></p>
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
         </div>
 
         <div class="budget-card text-white mb-6">
             <div class="flex justify-between items-start mb-2">
-                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Selected Spend</p>
+                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Calculated Spend</p>
                 <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
-            <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
-                <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
-                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase">Analyzing...</p>
-            </div>
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
-                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Safe-to-Spend</p>
-                    <p id="dailyLimit" class="text-lg font-bold text-emerald-400">₹0/day</p>
+                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Daily Safe</p>
+                    <p id="dailyLimit" class="text-lg font-bold text-emerald-400">₹0</p>
                 </div>
                 <div class="bg-slate-800/50 p-3 rounded-2xl text-right">
-                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Budget Limit</p>
+                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Budget</p>
                     <p id="salaryDisplay" class="text-lg font-bold text-slate-100">₹0</p>
                 </div>
             </div>
@@ -75,7 +69,7 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-6">
-            <button onclick="handleAddCategory()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-slate-600 uppercase shadow-sm">➕ Category</button>
+            <button onclick="handleAddCategory()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-slate-600 uppercase shadow-sm">➕ Add Category</button>
             <button onclick="openModal()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-red-500 uppercase shadow-sm">🗑️ Manage List</button>
         </div>
 
@@ -99,28 +93,28 @@
                 </select>
                 <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
             </div>
-            <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
+            <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg">Add Expense</button>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-6">
-            <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">📊 Excel Export</button>
-            <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">📄 PDF Report</button>
+            <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">Excel</button>
+            <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">PDF Report</button>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border mb-6">
-            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search (e.g. Food UPI)..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 border-none outline-none">
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Deep Search..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 outline-none">
             <div class="grid grid-cols-2 gap-3">
                 <input id="startDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px]">
                 <input id="endDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px]">
             </div>
         </div>
 
-        <div id="chartSection" class="bg-white p-6 rounded-[2rem] shadow-sm border mb-6 hidden">
+        <div id="chartSection" class="bg-white p-6 rounded-[2rem] border mb-6 hidden">
             <div id="chartWrapper"><canvas id="categoryBarChart"></canvas></div>
         </div>
 
         <div id="history" class="space-y-3"></div>
-        <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-400 rounded-2xl text-[9px] font-bold uppercase hidden mt-4">Expand History</button>
+        <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-400 rounded-2xl text-[9px] font-bold uppercase hidden mt-4">Expand</button>
     </div>
 
     <script>
@@ -130,8 +124,8 @@
 
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
         let allExpenses = [], filteredExpenses = [], monthlySalary = localStorage.getItem('mySalary') || 32000, categoryChart = null, isSeeAll = false;
-        let activeSummaryTotal = 0;
-        let activeCatSummary = {};
+        let globalFilteredSum = 0;
+        let activeCatData = {};
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -151,63 +145,52 @@
             const amount = document.getElementById('amount').value, date = document.getElementById('date').value;
             const sector = document.getElementById('sector').value, sub = document.getElementById('subSector').value;
             const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
-            if (!amount || !date) return alert("Fill details");
+            if (!amount || !date) return alert("Missing Info");
             await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
             document.getElementById('amount').value = "";
         }
 
-        async function deleteEntry(id) { if(confirm("Delete expense?")) await db.collection("expenses").doc(id).delete(); }
+        async function deleteEntry(id) { if(confirm("Delete?")) await db.collection("expenses").doc(id).delete(); }
 
         function handleRender() {
             const now = new Date();
-            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
-            let mSum = 0, lastMSum = 0, filteredSum = 0;
-            activeCatSummary = {};
+            const daysLeft = Math.max(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1, 1);
+            let mSum = 0, filteredSum = 0;
+            activeCatData = {};
             
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
-            const searchTerms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t !== '');
+            const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
             allExpenses.forEach(ex => {
-                const exD = new Date(ex.date);
-                if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
-                if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
+                if (new Date(ex.date).getMonth() === now.getMonth()) mSum += ex.amount;
             });
 
             filteredExpenses = allExpenses.filter(ex => {
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
-                const combinedData = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
-                const matchSearch = searchTerms.every(term => combinedData.includes(term));
+                const combined = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
+                const matchSearch = terms.every(t => combined.includes(t));
                 if (matchDate && matchSearch) { 
                     filteredSum += ex.amount; 
-                    activeCatSummary[ex.sector] = (activeCatSummary[ex.sector] || 0) + ex.amount; 
+                    activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + ex.amount; 
                 }
                 return matchDate && matchSearch;
             });
 
-            activeSummaryTotal = (sDate || searchTerms.length > 0) ? filteredSum : mSum;
-
-            document.getElementById('monthlyTotal').innerText = `₹${activeSummaryTotal.toLocaleString('en-IN')}`;
-            document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}/day`;
+            globalFilteredSum = (sDate || terms.length > 0) ? filteredSum : mSum;
+            document.getElementById('monthlyTotal').innerText = `₹${globalFilteredSum.toLocaleString('en-IN')}`;
+            document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
 
-            const diff = mSum - lastMSum;
-            if (lastMSum > 0) {
-                const perc = Math.abs(((diff/lastMSum)*100).toFixed(0));
-                document.getElementById('compareText').innerText = `${perc}% ${diff > 0 ? 'HIGHER' : 'LOWER'} THAN LAST MONTH`;
-                document.getElementById('trendIcon').className = `w-2 h-2 rounded-full ${diff > 0 ? 'bg-red-400' : 'bg-emerald-400'}`;
-            }
-
             document.getElementById('history').innerHTML = filteredExpenses.slice(0, isSeeAll ? filteredExpenses.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
-                    <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
-                    <div class="flex items-center gap-4"><p class="font-black">₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
+                    <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${ex.date} • ${ex.method}</p></div>
+                    <div class="flex items-center gap-4"><p class="font-black">₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300">✕</button></div>
                 </div>`).join('');
             
-            document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
-            if (Object.keys(activeCatSummary).length > 0) { document.getElementById('chartSection').classList.remove('hidden'); updateChart(activeCatSummary); }
+            document.getElementById('chartSection').classList.toggle('hidden', Object.keys(activeCatData).length === 0);
+            if (Object.keys(activeCatData).length > 0) updateChart(activeCatData);
         }
 
         function updateChart(summary) {
@@ -219,67 +202,33 @@
             else { categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } }); }
         }
 
-        function sanitize(str) { return str.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim(); }
+        function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
 
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
-            doc.setFontSize(22);
-            doc.text("Spend Guard Pro Report", 14, 20);
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
-            
-            doc.setDrawColor(200);
-            doc.line(14, 32, 196, 32);
-            doc.setFontSize(12);
-            doc.setTextColor(0);
-            doc.text("CURRENT VIEW SUMMARY", 14, 42);
-            
-            doc.setFontSize(10);
-            doc.text(`Monthly Salary: Rs. ${monthlySalary}`, 14, 50);
-            doc.text(`Selected Total Spend: Rs. ${activeSummaryTotal}`, 14, 57);
-            
-            const remaining = monthlySalary - activeSummaryTotal;
-            doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0);
-            doc.text(`Remaining Balance: Rs. ${remaining}`, 14, 64);
-            
-            // Transaction Table (Sanitized)
-            doc.setTextColor(0);
-            const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
-            doc.autoTable({ 
-                head: [['Date', 'Category', 'Method', 'Amount']], 
-                body: rows, 
-                startY: 75,
-                theme: 'striped',
-                headStyles: { fillColor: [15, 23, 42] }
-            });
+            doc.setFontSize(20); doc.text("Spend Guard Report", 14, 20);
+            doc.setFontSize(10); doc.text(`Total Spend in Report: Rs. ${globalFilteredSum}`, 14, 30);
+            doc.text(`Salary: Rs. ${monthlySalary}`, 14, 36);
 
-            // Spending Bar Chart in PDF
-            let finalY = doc.lastAutoTable.finalY + 15;
-            doc.setFontSize(12);
-            doc.text("SPENDING BREAKDOWN", 14, finalY);
-            
-            const catLabels = Object.keys(activeCatSummary).sort((a,b) => activeCatSummary[b] - activeCatSummary[a]);
-            catLabels.forEach((label, index) => {
-                let barY = finalY + 10 + (index * 8);
-                let barWidth = (activeCatSummary[label] / activeSummaryTotal) * 100;
-                doc.setFontSize(8);
-                doc.text(`${sanitize(label)}: Rs.${activeCatSummary[label]}`, 14, barY);
-                doc.setFillColor(59, 130, 246);
-                doc.rect(70, barY - 3, barWidth, 4, 'F');
+            const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
+            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: rows, startY: 45, theme: 'striped' });
+
+            let finalY = doc.lastAutoTable.finalY + 20;
+            doc.text("CATEGORY BREAKDOWN", 14, finalY);
+            Object.keys(activeCatData).forEach((label, i) => {
+                let y = finalY + 10 + (i * 10);
+                if (y > 280) { doc.addPage(); finalY = 20; y = 30; }
+                let width = (activeCatData[label] / globalFilteredSum) * 100;
+                doc.text(`${sanitize(label)}: Rs.${activeCatData[label]}`, 14, y);
+                doc.setFillColor(59, 130, 246); doc.rect(70, y - 4, width, 5, 'F');
             });
-            
-            doc.save("SpendGuard_Report.pdf");
+            doc.save("Report.pdf");
         }
 
         function exportExcel() {
-            const data = filteredExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount }));
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-            XLSX.writeFile(wb, "SpendGuard_Report.xlsx");
+            const ws = XLSX.utils.json_to_sheet(filteredExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
 
         function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
@@ -292,10 +241,10 @@
                     <button onclick="removeCat('${c}')" class="text-red-500 font-bold text-xs uppercase">Delete</button>
                 </div>`).join('');
         }
-        function removeCat(c) { if(confirm(`Delete "${c}"?`)) { categories = categories.filter(item => item !== c); localStorage.setItem('myCats', JSON.stringify(categories)); renderManageList(); handleRender(); } }
+        function removeCat(c) { if(confirm("Delete?")) { categories = categories.filter(item => item !== c); localStorage.setItem('myCats', JSON.stringify(categories)); renderManageList(); handleRender(); } }
         function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); } }
         function handleSetSalary() { const s = prompt("Monthly Salary:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
-        function toggleSeeAll() { isSeeAll = !isSeeAll; document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse" : "Expand All"; handleRender(); }
+        function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
         function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function handleLogout() { auth.signOut(); }
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
