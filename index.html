@@ -100,7 +100,7 @@
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] border mb-6">
-            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search History..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 border-none outline-none">
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search (e.g. Food UPI)..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 border-none outline-none">
             <div class="grid grid-cols-2 gap-3">
                 <input id="startDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px]">
                 <input id="endDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px]">
@@ -140,9 +140,10 @@
         async function handleSaveExpense() {
             const amount = document.getElementById('amount').value, date = document.getElementById('date').value;
             const sector = document.getElementById('sector').value, sub = document.getElementById('subSector').value;
+            const method = document.getElementById('method').value;
             const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
             if (!amount || !date) return alert("Fill details");
-            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
+            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: method, date, uid: auth.currentUser.uid });
             document.getElementById('amount').value = "";
         }
 
@@ -153,22 +154,31 @@
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
             let mSum = 0, lastMSum = 0, filteredSum = 0, catSummary = {};
-            const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value, search = document.getElementById('searchInput').value.toLowerCase();
+            
+            const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
+            const searchTerms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t !== '');
 
             allExpenses.forEach(ex => {
                 const exD = new Date(ex.date);
-                if (exD.getMonth() === now.getMonth()) mSum += ex.amount;
+                if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
                 if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
             });
 
             const filtered = allExpenses.filter(ex => {
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
-                const matchSearch = !search || ex.sector.toLowerCase().includes(search);
-                if (matchDate && matchSearch) { filteredSum += ex.amount; catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount; }
+                
+                // Deep Search Logic: Check if every typed word exists somewhere in the entry
+                const combinedData = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
+                const matchSearch = searchTerms.every(term => combinedData.includes(term));
+
+                if (matchDate && matchSearch) { 
+                    filteredSum += ex.amount; 
+                    catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount; 
+                }
                 return matchDate && matchSearch;
             });
 
-            document.getElementById('monthlyTotal').innerText = `₹${(sDate || search ? filteredSum : mSum).toLocaleString('en-IN')}`;
+            document.getElementById('monthlyTotal').innerText = `₹${(sDate || searchTerms.length > 0 ? filteredSum : mSum).toLocaleString('en-IN')}`;
             document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}/day`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -183,7 +193,7 @@
 
             document.getElementById('history').innerHTML = filtered.slice(0, isSeeAll ? filtered.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
-                    <div class="flex-1"><p class="font-bold text-sm">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date}</p></div>
+                    <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
                     <div class="flex items-center gap-4"><p class="font-black">₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
                 </div>`).join('');
             
