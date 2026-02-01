@@ -53,13 +53,13 @@
 
         <div class="budget-card text-white mb-6">
             <div class="flex justify-between items-start mb-2">
-                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Monthly Spend</p>
+                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Selected Spend</p>
                 <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Salary</button>
             </div>
             <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
             <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
                 <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
-                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Analyzing...</p>
+                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase">Analyzing...</p>
             </div>
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
@@ -130,7 +130,8 @@
 
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
         let allExpenses = [], filteredExpenses = [], monthlySalary = localStorage.getItem('mySalary') || 32000, categoryChart = null, isSeeAll = false;
-        let globalMonthlySpend = 0;
+        let activeSummaryTotal = 0;
+        let activeCatSummary = {};
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -161,7 +162,9 @@
             const now = new Date();
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
-            let mSum = 0, lastMSum = 0, filteredSum = 0, catSummary = {};
+            let mSum = 0, lastMSum = 0, filteredSum = 0;
+            activeCatSummary = {};
+            
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const searchTerms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t !== '');
 
@@ -171,17 +174,20 @@
                 if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
             });
 
-            globalMonthlySpend = mSum;
-
             filteredExpenses = allExpenses.filter(ex => {
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
                 const combinedData = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
                 const matchSearch = searchTerms.every(term => combinedData.includes(term));
-                if (matchDate && matchSearch) { filteredSum += ex.amount; catSummary[ex.sector] = (catSummary[ex.sector] || 0) + ex.amount; }
+                if (matchDate && matchSearch) { 
+                    filteredSum += ex.amount; 
+                    activeCatSummary[ex.sector] = (activeCatSummary[ex.sector] || 0) + ex.amount; 
+                }
                 return matchDate && matchSearch;
             });
 
-            document.getElementById('monthlyTotal').innerText = `₹${(sDate || searchTerms.length > 0 ? filteredSum : mSum).toLocaleString('en-IN')}`;
+            activeSummaryTotal = (sDate || searchTerms.length > 0) ? filteredSum : mSum;
+
+            document.getElementById('monthlyTotal').innerText = `₹${activeSummaryTotal.toLocaleString('en-IN')}`;
             document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}/day`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -201,7 +207,7 @@
                 </div>`).join('');
             
             document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
-            if (Object.keys(catSummary).length > 0) { document.getElementById('chartSection').classList.remove('hidden'); updateChart(catSummary); }
+            if (Object.keys(activeCatSummary).length > 0) { document.getElementById('chartSection').classList.remove('hidden'); updateChart(activeCatSummary); }
         }
 
         function updateChart(summary) {
@@ -213,45 +219,35 @@
             else { categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } }); }
         }
 
-        function exportExcel() {
-            const data = filteredExpenses.map(ex => ({ Date: ex.date, Category: ex.sector, Method: ex.method, Amount: ex.amount }));
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-            XLSX.writeFile(wb, "SpendGuard_Report.xlsx");
-        }
+        function sanitize(str) { return str.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim(); }
 
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // PDF Header
             doc.setFontSize(22);
-            doc.text("Spend Guard Pro", 14, 20);
+            doc.text("Spend Guard Pro Report", 14, 20);
             doc.setFontSize(10);
             doc.setTextColor(100);
-            doc.text(`Report Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
             
-            // Summary Block
             doc.setDrawColor(200);
             doc.line(14, 32, 196, 32);
             doc.setFontSize(12);
             doc.setTextColor(0);
-            doc.text("MONTHLY SUMMARY", 14, 42);
+            doc.text("CURRENT VIEW SUMMARY", 14, 42);
             
             doc.setFontSize(10);
-            doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
-            doc.text(`Total Monthly Spend: Rs. ${globalMonthlySpend}`, 14, 57);
+            doc.text(`Monthly Salary: Rs. ${monthlySalary}`, 14, 50);
+            doc.text(`Selected Total Spend: Rs. ${activeSummaryTotal}`, 14, 57);
             
-            const remaining = monthlySalary - globalMonthlySpend;
-            doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0); // Red if over budget, Green if under
+            const remaining = monthlySalary - activeSummaryTotal;
+            doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0);
             doc.text(`Remaining Balance: Rs. ${remaining}`, 14, 64);
             
+            // Transaction Table (Sanitized)
             doc.setTextColor(0);
-            doc.text("-----------------------------------------------------------------------------------------------------", 14, 70);
-
-            // Table
-            const rows = filteredExpenses.map(ex => [ex.date, ex.sector, ex.method, `Rs. ${ex.amount}`]);
+            const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
             doc.autoTable({ 
                 head: [['Date', 'Category', 'Method', 'Amount']], 
                 body: rows, 
@@ -259,8 +255,31 @@
                 theme: 'striped',
                 headStyles: { fillColor: [15, 23, 42] }
             });
+
+            // Spending Bar Chart in PDF
+            let finalY = doc.lastAutoTable.finalY + 15;
+            doc.setFontSize(12);
+            doc.text("SPENDING BREAKDOWN", 14, finalY);
             
-            doc.save("SpendGuard_Detailed_Report.pdf");
+            const catLabels = Object.keys(activeCatSummary).sort((a,b) => activeCatSummary[b] - activeCatSummary[a]);
+            catLabels.forEach((label, index) => {
+                let barY = finalY + 10 + (index * 8);
+                let barWidth = (activeCatSummary[label] / activeSummaryTotal) * 100;
+                doc.setFontSize(8);
+                doc.text(`${sanitize(label)}: Rs.${activeCatSummary[label]}`, 14, barY);
+                doc.setFillColor(59, 130, 246);
+                doc.rect(70, barY - 3, barWidth, 4, 'F');
+            });
+            
+            doc.save("SpendGuard_Report.pdf");
+        }
+
+        function exportExcel() {
+            const data = filteredExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+            XLSX.writeFile(wb, "SpendGuard_Report.xlsx");
         }
 
         function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
