@@ -139,7 +139,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // PERSISTENT DATA LOGIC (Categories)
+        // PERSISTENT DATA
         let categories = JSON.parse(localStorage.getItem('myCats'));
         if (!categories || categories.length === 0) {
             categories = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
@@ -175,6 +175,8 @@
             document.getElementById('amount').value = "";
         }
 
+        async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
+
         function handleRender() {
             const now = new Date();
             const daysLeft = Math.max(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1, 1);
@@ -185,20 +187,20 @@
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
-            // Calculate basic monthly totals for dashboard metrics
+            // Month Totals for Dashboard
             allExpenses.forEach(ex => {
                 const exD = new Date(ex.date);
                 if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
                 if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
             });
 
-            // LOGIC FIX: If no date/search, show CURRENT MONTH. Else show FILTERED.
+            // "Current Month Only" Default Logic
             const isDefaultView = !sDate && !eDate && terms.length === 0;
 
             filteredExpenses = allExpenses.filter(ex => {
                 const exDate = new Date(ex.date);
                 
-                // 1. DEFAULT: Show ONLY current month
+                // If Default View -> Show Current Month Only
                 if (isDefaultView) {
                     const isCurrentMonth = exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear();
                     if (isCurrentMonth) {
@@ -208,7 +210,7 @@
                     return isCurrentMonth;
                 }
 
-                // 2. FILTERED: Show matches from any date range
+                // If Filtered -> Show Matching Data
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
                 const combined = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
                 const matchSearch = terms.every(t => combined.includes(t));
@@ -220,7 +222,7 @@
                 return matchDate && matchSearch;
             });
 
-            globalFilteredSum = fSum; // Used for PDF export
+            globalFilteredSum = fSum;
 
             document.getElementById('monthlyTotal').innerText = `₹${globalFilteredSum.toLocaleString('en-IN')}`;
             document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
@@ -228,7 +230,7 @@
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
 
-            // Trend Logic
+            // Trend
             const diff = mSum - lastMSum;
             if (lastMSum > 0) {
                 const perc = Math.abs(((diff/lastMSum)*100).toFixed(0));
@@ -236,7 +238,7 @@
                 document.getElementById('trendIcon').className = `w-2 h-2 rounded-full ${diff > 0 ? 'bg-red-400' : 'bg-emerald-400'}`;
             }
 
-            // History with Delete
+            // History
             document.getElementById('history').innerHTML = filteredExpenses.slice(0, isSeeAll ? filteredExpenses.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
                     <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
@@ -246,7 +248,7 @@
             document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
             document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse History" : "Expand History";
 
-            // Analytics Logic (Destroy old to fix "Ghosting")
+            // Chart
             if (Object.keys(activeCatData).length > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
                 updateChart(activeCatData);
@@ -263,11 +265,11 @@
             
             const data = { labels, datasets: [{ data: labels.map(l => summary[l]), backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 20 }] };
             
-            if (categoryChart) categoryChart.destroy(); // VITAL: Prevents old data overlap
+            if (categoryChart) categoryChart.destroy();
             categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } });
         }
 
-        async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
+        async function deleteEntry(id) { if(confirm("Delete this?")) await db.collection("expenses").doc(id).delete(); }
         function handleSetSalary() { const s = prompt("Salary:"); if(s) { monthlySalary = s; localStorage.setItem('mySalary', s); handleRender(); } }
         function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); localStorage.setItem('myCats', JSON.stringify(categories)); handleRender(); } }
         function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
@@ -283,29 +285,78 @@
         }
         function removeCat(c) { categories = categories.filter(i => i !== c); localStorage.setItem('myCats', JSON.stringify(categories)); renderManageList(); handleRender(); }
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
+        
         function exportExcel() {
             const ws = XLSX.utils.json_to_sheet(filteredExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
+
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFontSize(20); doc.text("Spend Guard Report", 14, 20);
-            doc.setFontSize(10); doc.text(`Total Spent (Selection): Rs. ${globalFilteredSum}`, 14, 30);
-            const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
-            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: rows, startY: 40, theme: 'striped' });
             
+            // 1. BRANDED HEADER
+            doc.setFontSize(22);
+            doc.text("Spend Guard Pro Report", 14, 20);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+            
+            doc.setDrawColor(200);
+            doc.line(14, 32, 196, 32);
+            
+            // 2. FINANCIAL SUMMARY
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text("FINANCIAL SUMMARY", 14, 42);
+            
+            doc.setFontSize(10);
+            doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
+            doc.text(`Total Spent (View): Rs. ${globalFilteredSum}`, 14, 57);
+            
+            const remaining = monthlySalary - globalFilteredSum;
+            
+            // Color Logic: Red if Negative, Green if Positive
+            doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0); 
+            doc.text(`Remaining Balance: Rs. ${remaining}`, 14, 64);
+            doc.setTextColor(0);
+
+            // 3. TABLE
+            const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
+            doc.autoTable({ 
+                head: [['Date', 'Category', 'Method', 'Amount']], 
+                body: rows, 
+                startY: 75,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 23, 42] } 
+            });
+
+            // 4. SORTED BAR GRAPH
             let y = doc.lastAutoTable.finalY + 20;
-            doc.text("CATEGORY BREAKDOWN", 14, y);
-            Object.keys(activeCatData).forEach((l, i) => {
+            if (y > 250) { doc.addPage(); y = 20; }
+            
+            doc.setFontSize(12);
+            doc.text("SPENDING BREAKDOWN (Descending)", 14, y);
+            
+            // Sort Descending for the PDF Graph
+            const sortedKeys = Object.keys(activeCatData).sort((a,b) => activeCatData[b] - activeCatData[a]);
+            
+            sortedKeys.forEach((l, i) => {
                 let barY = y + 10 + (i * 10);
                 if (barY > 280) { doc.addPage(); y = 20; barY = 30; }
+                
+                doc.setFontSize(9);
                 doc.text(`${sanitize(l)}: Rs.${activeCatData[l]}`, 14, barY);
+                
+                // Draw Bar
                 doc.setFillColor(59, 130, 246);
-                doc.rect(70, barY - 4, (activeCatData[l]/globalFilteredSum)*100, 5, 'F');
+                let width = (activeCatData[l] / globalFilteredSum) * 100;
+                doc.rect(80, barY - 3, width, 4, 'F');
             });
-            doc.save("Report.pdf");
+            
+            doc.save("SpendGuard_Branded_Report.pdf");
         }
+
         function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function handleLogout() { auth.signOut(); }
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
