@@ -57,7 +57,7 @@
             <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
             <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
                 <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
-                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Syncing Data...</p>
+                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Syncing...</p>
             </div>
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800/50 p-3 rounded-2xl">
@@ -104,11 +104,6 @@
             <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">Excel Export</button>
-            <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">PDF Report</button>
-        </div>
-
         <div class="bg-white p-6 rounded-[2rem] border mb-6">
             <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">Archive Search & Filter</p>
             <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Deep Search..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 border-none outline-none">
@@ -129,6 +124,11 @@
             <div id="chartWrapper"><canvas id="categoryBarChart"></canvas></div>
         </div>
 
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">Excel Export</button>
+            <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">PDF Report</button>
+        </div>
+
         <div id="history" class="space-y-3"></div>
         <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-400 rounded-2xl text-[9px] font-bold uppercase hidden mt-4">Expand History</button>
     </div>
@@ -138,15 +138,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // 1. INITIALIZE FROM LOCAL STORAGE IMMEDIATELY
-        let categories = JSON.parse(localStorage.getItem('myCats'));
+        // DEFAULT STATE (Local Storage is Secondary now)
+        let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
-
-        // Fallback if local storage is empty
-        if (!categories || categories.length === 0) {
-            categories = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
-        }
-
         let allExpenses = [], filteredExpenses = [], categoryChart = null, isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
 
         auth.onAuthStateChanged(user => {
@@ -155,27 +149,25 @@
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
 
-                // 2. CLOUD SYNC LOGIC (The Fix)
-                const userDoc = db.collection('user_settings').doc(user.uid);
-                
-                userDoc.get().then(doc => {
+                // 1. LIVE SETTINGS LISTENER (Fixes Cross-Device Issue)
+                db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
-                        // CLOUD HAS DATA -> Overwrite local (Sync Down)
                         const data = doc.data();
                         if (data.categories) categories = data.categories;
                         if (data.salary) monthlySalary = data.salary;
                         
-                        // Update local backup
+                        // Update local storage to keep them in sync
                         localStorage.setItem('myCats', JSON.stringify(categories));
                         localStorage.setItem('mySalary', monthlySalary);
                     } else {
-                        // CLOUD IS EMPTY -> Upload local (Sync Up)
-                        saveSettingsToCloud(); 
+                        // First time? Upload current defaults to cloud
+                        saveSettingsToCloud();
                     }
-                    handleRender(); // Force re-render with correct categories
+                    // Force Render whenever cloud data changes
+                    handleRender();
                 });
 
-                // Load Expenses
+                // 2. LIVE EXPENSE LISTENER
                 db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
                     allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                     handleRender();
@@ -185,18 +177,13 @@
             }
         });
 
-        // 3. PERSISTENCE FUNCTION
+        // Helper to push to cloud
         function saveSettingsToCloud() {
             if (auth.currentUser) {
-                // Save to Cloud
                 db.collection('user_settings').doc(auth.currentUser.uid).set({
                     categories: categories,
                     salary: monthlySalary
                 }, { merge: true });
-                
-                // Save to Local
-                localStorage.setItem('myCats', JSON.stringify(categories));
-                localStorage.setItem('mySalary', monthlySalary);
             }
         }
 
@@ -258,7 +245,7 @@
             document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             
-            // POPULATE DROPDOWN
+            // Populate Dropdown
             document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             
             document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
@@ -300,7 +287,7 @@
             categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } });
         }
 
-        async function deleteEntry(id) { if(confirm("Delete?")) await db.collection("expenses").doc(id).delete(); }
+        async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
         
         function handleSetSalary() { 
             const s = prompt("Salary:"); 
