@@ -16,64 +16,61 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
 <style>
-.app-logo{background-image:url('logo.png');background-size:cover;width:80px;height:80px;border-radius:22px}
+.app-logo { background-image:url('logo.png');background-size:cover;width:80px;height:80px;border-radius:22px }
+.custom-scroll::-webkit-scrollbar{display:none}
+.budget-card{background:#0f172a;border-radius:2.5rem;padding:1.75rem;border-left:6px solid #3b82f6}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center}
 .modal.active{display:flex}
-.budget-card{background:#0f172a;border-radius:2.5rem;padding:1.75rem;border-left:6px solid #3b82f6}
 </style>
 </head>
 
-<body class="bg-gray-50">
+<body class="bg-gray-50 text-slate-800 pb-20 custom-scroll">
 
-<!-- CATEGORY MANAGER -->
+<!-- MANAGE CATEGORIES -->
 <div id="manageModal" class="modal">
-<div class="bg-white max-w-sm w-full rounded-[2.5rem] p-8">
-<h3 class="font-black mb-4">Manage Categories</h3>
-<input id="catSearch" oninput="renderManageList()" class="w-full p-3 bg-gray-100 rounded-xl mb-3">
-<div id="catList"></div>
-<button onclick="closeModal()" class="mt-4 w-full bg-slate-900 text-white p-3 rounded-xl">Close</button>
+<div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+<h3 class="text-xl font-black mb-4">Manage Categories</h3>
+<input id="catSearch" oninput="renderManageList()" class="w-full p-4 bg-gray-100 rounded-2xl mb-4">
+<div id="catList" class="space-y-2"></div>
+<button onclick="closeModal()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs">Close</button>
 </div>
 </div>
 
-<!-- BUDGET MODAL -->
+<!-- CATEGORY BUDGET MODAL -->
 <div id="budgetModal" class="modal">
-<div class="bg-white max-w-sm w-full rounded-[2.5rem] p-8">
-<h3 class="font-black mb-4">Category Budgets</h3>
-<div id="budgetList" class="space-y-3 max-h-72 overflow-y-auto"></div>
-<button onclick="closeBudgetModal()" class="mt-4 w-full bg-slate-900 text-white p-3 rounded-xl">Close</button>
+<div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+<h3 class="text-xl font-black mb-4">Category Budgets</h3>
+<div id="budgetList" class="space-y-3 max-h-72 overflow-y-auto custom-scroll"></div>
+<button onclick="closeBudgetModal()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs mt-4">Close</button>
 </div>
 </div>
 
 <!-- LOGIN -->
-<div id="loginPage" class="min-h-screen flex items-center justify-center hidden">
-<button onclick="handleLogin()" class="bg-slate-900 text-white p-6 rounded-xl">
+<div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
+<div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm">
+<h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
+<p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
+<button onclick="handleLogin()" class="bg-slate-900 text-white p-4 rounded-2xl font-bold">
 Sign in with Google
 </button>
+</div>
 </div>
 
 <!-- APP -->
 <div id="appPage" class="max-w-md mx-auto p-4 hidden">
 
 <div class="budget-card text-white mb-6">
-<h2 id="monthlyTotal" class="text-4xl font-black">₹0</h2>
-<p id="compareText"></p>
-<div class="h-2 bg-slate-700 mt-4 rounded">
+<h2 id="monthlyTotal" class="text-5xl font-black mb-4">₹0</h2>
+<p id="compareText" class="text-xs"></p>
+<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
 <div id="progressBar" class="h-full bg-blue-500"></div>
 </div>
 </div>
 
-<div class="grid grid-cols-3 gap-2 mb-6">
-<button onclick="handleAddCategory()" class="bg-white p-3 rounded-xl">➕ Category</button>
-<button onclick="openModal()" class="bg-white p-3 rounded-xl">🗑 Manage</button>
-<button onclick="openBudgetModal()" class="bg-white p-3 rounded-xl">📊 Budgets</button>
-</div>
-
-<div class="bg-white p-6 rounded-xl mb-6">
-<input id="amount" placeholder="Amount" class="w-full mb-2 p-3 bg-gray-100 rounded">
-<select id="sector" class="w-full p-3 bg-gray-100 rounded"></select>
-<button onclick="handleSaveExpense()" class="mt-3 w-full bg-blue-600 text-white p-4 rounded-xl">
-Add Expense
-</button>
+<div class="grid grid-cols-3 gap-3 mb-6">
+<button onclick="handleAddCategory()" class="bg-white border p-4 rounded-2xl">➕ Add</button>
+<button onclick="openModal()" class="bg-white border p-4 rounded-2xl">🗑️ Manage</button>
+<button onclick="openBudgetModal()" class="bg-white border p-4 rounded-2xl">📊 Budgets</button>
 </div>
 
 <div id="history"></div>
@@ -82,7 +79,6 @@ Add Expense
 
 <script>
 
-/* FIREBASE */
 firebase.initializeApp({
 apiKey:"AIzaSyBSfbUpYpgu0kLC2a1I4oEiQjH_zQoxcdE",
 authDomain:"expensetracker-7da2d.firebaseapp.com",
@@ -93,125 +89,117 @@ const db=firebase.firestore(),auth=firebase.auth();
 
 /* GLOBAL */
 let categories=[];
-let categoryBudgets={};
 let monthlySalary=32000;
-let allExpenses=[],filteredExpenses=[],activeCatData={};
+let allExpenses=[],filteredExpenses=[],categoryChart=null,isSeeAll=false,globalFilteredSum=0,activeCatData={};
+let categoryBudgets={};
 
 /* AUTH */
 auth.onAuthStateChanged(user=>{
 if(user){
-loginPage.classList.add("hidden");
-appPage.classList.remove("hidden");
+
+document.getElementById("loginPage").classList.add("hidden");
+document.getElementById("appPage").classList.remove("hidden");
 
 db.collection("user_settings").doc(user.uid)
 .onSnapshot(doc=>{
 if(doc.exists){
-let d=doc.data();
-categories=d.categories||["🍔 Food","🚗 Travel","🛍 Shopping","Bills"];
-categoryBudgets=d.categoryBudgets||{};
-monthlySalary=d.salary||32000;
+const d=doc.data();
+
+if(d.categories) categories=d.categories;
+if(d.salary) monthlySalary=d.salary;
+if(d.categoryBudgets) categoryBudgets=d.categoryBudgets;
+
 }else saveSettingsToCloud();
 
-renderAll();
+handleRender();
 });
 
 db.collection("expenses")
 .where("uid","==",user.uid)
 .onSnapshot(s=>{
 allExpenses=s.docs.map(d=>({id:d.id,...d.data()}));
-renderAll();
+handleRender();
 });
+
+}else{
+document.getElementById("loginPage").classList.remove("hidden");
 }
 });
 
 /* CLOUD SAVE */
 function saveSettingsToCloud(){
-db.collection("user_settings")
-.doc(auth.currentUser.uid)
-.set({
+if(auth.currentUser){
+db.collection("user_settings").doc(auth.currentUser.uid).set({
 categories,
 salary:monthlySalary,
 categoryBudgets
 },{merge:true});
 }
+}
 
 /* CATEGORY */
 function handleAddCategory(){
-let n=prompt("New Category");
+let n=prompt("New Category:");
 if(!n)return;
-categories.push(n);
+categories.push(n.trim());
 saveSettingsToCloud();
-renderAll();
-}
-
-function removeCat(c){
-categories=categories.filter(x=>x!==c);
-delete categoryBudgets[c];
-saveSettingsToCloud();
-renderAll();
-renderManageList();
+handleRender();
 }
 
 /* MODALS */
-function openModal(){manageModal.classList.add("active");renderManageList();}
-function closeModal(){manageModal.classList.remove("active");}
+function openModal(){document.getElementById("manageModal").classList.add("active");renderManageList();}
+function closeModal(){document.getElementById("manageModal").classList.remove("active");}
 
 function openBudgetModal(){
-budgetModal.classList.add("active");
+document.getElementById("budgetModal").classList.add("active");
 renderBudgetList();
 }
-function closeBudgetModal(){budgetModal.classList.remove("active");}
+function closeBudgetModal(){
+document.getElementById("budgetModal").classList.remove("active");
+}
 
 /* BUDGET UI */
 function renderBudgetList(){
-budgetList.innerHTML=categories.map(c=>`
-<div class="flex justify-between bg-gray-100 p-3 rounded">
-<span>${c}</span>
-<input type="number" value="${categoryBudgets[c]||""}"
-oninput="updateCategoryBudget('${c}',this.value)"
-class="w-28 p-2 rounded"/>
+document.getElementById("budgetList").innerHTML=
+categories.map(cat=>`
+<div class="flex justify-between bg-gray-50 p-4 rounded-xl">
+<span class="font-bold">${cat}</span>
+<input type="number"
+value="${categoryBudgets[cat]||""}"
+placeholder="₹ Limit"
+oninput="updateCategoryBudget('${cat}',this.value)"
+class="w-28 p-2 rounded-lg bg-white border"/>
 </div>`).join("");
 }
 
-function updateCategoryBudget(c,v){
-if(!v)delete categoryBudgets[c];
-else categoryBudgets[c]=parseFloat(v);
+function updateCategoryBudget(cat,val){
+if(!val) delete categoryBudgets[cat];
+else categoryBudgets[cat]=parseFloat(val);
 saveSettingsToCloud();
 }
 
-/* SAVE EXPENSE */
-function handleSaveExpense(){
-db.collection("expenses").add({
-amount:+amount.value,
-sector:sector.value,
-uid:auth.currentUser.uid,
-date:new Date().toISOString().slice(0,10)
-});
-amount.value="";
+/* REMOVE CAT PATCH */
+function removeCat(c){
+if(confirm("Delete?")){
+categories=categories.filter(i=>i!==c);
+delete categoryBudgets[c];
+saveSettingsToCloud();
+renderManageList();
+handleRender();
+}
 }
 
-/* RENDER */
-function renderAll(){
+/* HISTORY RENDER PATCH */
+function handleRender(){
 
-sector.innerHTML=categories.map(c=>`<option>${c}</option>`).join("");
-
-activeCatData={};
-filteredExpenses=allExpenses;
-
-filteredExpenses.forEach(e=>{
-activeCatData[e.sector]=(activeCatData[e.sector]||0)+e.amount;
-});
-
-monthlyTotal.innerText="₹"+Object.values(activeCatData).reduce((a,b)=>a+b,0);
-
-history.innerHTML=filteredExpenses.map(e=>`
-<div class="bg-white p-4 rounded mb-2 flex justify-between">
-<p class="${
-categoryBudgets[e.sector] &&
-activeCatData[e.sector]>categoryBudgets[e.sector]
-?"text-red-600":""
-}">${e.sector}</p>
-<p>₹${e.amount}</p>
+document.getElementById("history").innerHTML=filteredExpenses.map(ex=>`
+<div class="bg-white p-4 rounded-2xl flex justify-between border mb-2">
+<p class="font-bold ${
+categoryBudgets[ex.sector] &&
+activeCatData[ex.sector]>categoryBudgets[ex.sector]
+?"text-red-600":"text-slate-700"
+}">${ex.sector}</p>
+<p>₹${ex.amount}</p>
 </div>`).join("");
 
 }
