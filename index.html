@@ -143,7 +143,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // 1. LOAD LOCAL STORAGE FOR SPEED (Offline Backup)
+        // 1. Load Local Storage (Instant View)
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
         let allExpenses = [], filteredExpenses = [], categoryChart = null, isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
@@ -154,28 +154,25 @@
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
 
-                // 2. SAFETY LISTEN: We ONLY listen. We do NOT push default data automatically.
+                // 2. SMART SYNC: Check Cloud, but don't overwrite local if Cloud is empty
                 db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
-                        // CLOUD HAS DATA -> Safe to Sync Down
+                        // Cloud has data - Sync DOWN (Cloud is Truth)
                         const data = doc.data();
-                        if(data.categories) categories = data.categories;
-                        if(data.salary) monthlySalary = data.salary;
+                        if (data.categories) categories = data.categories;
+                        if (data.salary) monthlySalary = data.salary;
                         
                         // Update local backup
                         localStorage.setItem('myCats', JSON.stringify(categories));
                         localStorage.setItem('mySalary', monthlySalary);
-                        
-                        // Re-render UI
-                        handleRender();
-                        if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
                     } else {
-                        // CLOUD IS EMPTY -> Do NOT overwrite with defaults. Just wait for user action.
-                        console.log("No cloud settings yet. Using local defaults.");
+                        // Cloud is empty - Sync UP (Local is Truth)
+                        saveSettingsToCloud();
                     }
+                    handleRender();
+                    if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
                 });
 
-                // Expenses Listener
                 db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
                     allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                     handleRender();
@@ -185,8 +182,13 @@
             }
         });
 
-        // 3. EXPLICIT SAVE ONLY (Prevent Accidental Overwrite)
+        // 3. FORCE SAVE FUNCTION
         function saveSettingsToCloud() {
+            // Save to Local IMMEDIATELY
+            localStorage.setItem('myCats', JSON.stringify(categories));
+            localStorage.setItem('mySalary', monthlySalary);
+
+            // Save to Cloud if logged in
             if (auth.currentUser) {
                 db.collection('user_settings').doc(auth.currentUser.uid).set({
                     categories: categories,
@@ -231,7 +233,6 @@
 
             filteredExpenses = allExpenses.filter(ex => {
                 const exDate = new Date(ex.date);
-                
                 if (isDefaultView) {
                     const isCurrentMonth = exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear();
                     if (isCurrentMonth) {
@@ -240,11 +241,9 @@
                     }
                     return isCurrentMonth;
                 }
-
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
                 const combined = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
                 const matchSearch = terms.every(t => combined.includes(t));
-                
                 if (matchDate && matchSearch) { 
                     fSum += ex.amount; 
                     activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + ex.amount; 
