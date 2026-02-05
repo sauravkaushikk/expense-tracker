@@ -1,214 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spend Guard Pro</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spend Guard Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
-<style>
-.app-logo { background-image:url('logo.png');background-size:cover;width:80px;height:80px;border-radius:22px }
-.custom-scroll::-webkit-scrollbar{display:none}
-.budget-card{background:#0f172a;border-radius:2.5rem;padding:1.75rem;border-left:6px solid #3b82f6}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center}
-.modal.active{display:flex}
-</style>
+    <style>
+        .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 80px; height: 80px; margin-bottom: 20px; border-radius: 22px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .custom-scroll::-webkit-scrollbar { display: none; }
+        .budget-card { background-color: #0f172a; border-radius: 2.5rem; padding: 1.75rem; border-left: 6px solid #3b82f6; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+    </style>
 </head>
-
 <body class="bg-gray-50 text-slate-800 pb-20 custom-scroll">
 
-<!-- MANAGE CATEGORIES -->
-<div id="manageModal" class="modal">
-<div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-<h3 class="text-xl font-black mb-4">Manage Categories</h3>
-<input id="catSearch" oninput="renderManageList()" class="w-full p-4 bg-gray-100 rounded-2xl mb-4">
-<div id="catList" class="space-y-2"></div>
-<button onclick="closeModal()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs">Close</button>
-</div>
-</div>
+    <div id="manageModal" class="modal">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+            <h3 class="text-xl font-black mb-4">Manage Categories</h3>
+            <input id="catSearch" oninput="renderManageList()" type="text" placeholder="Search categories..." class="w-full p-4 bg-gray-100 rounded-2xl mb-4 outline-none font-bold text-sm">
+            <div id="catList" class="max-h-60 overflow-y-auto space-y-2 mb-6 custom-scroll"></div>
+            <button onclick="closeModal()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs">Close</button>
+        </div>
+    </div>
 
-<!-- CATEGORY BUDGET MODAL -->
-<div id="budgetModal" class="modal">
-<div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-<h3 class="text-xl font-black mb-4">Category Budgets</h3>
-<div id="budgetList" class="space-y-3 max-h-72 overflow-y-auto custom-scroll"></div>
-<button onclick="closeBudgetModal()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs mt-4">Close</button>
-</div>
-</div>
+    <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
+            <div class="app-logo"></div>
+            <h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
+            <p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
+            <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6"> Sign in with Google
+            </button>
+        </div>
+    </div>
 
-<!-- LOGIN -->
-<div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
-<div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm">
-<h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
-<p class="text-gray-400 mb-8 text-sm">Minimalist tracking, Cloud secure.</p>
-<button onclick="handleLogin()" class="bg-slate-900 text-white p-4 rounded-2xl font-bold">
-Sign in with Google
-</button>
-</div>
-</div>
+    <div id="appPage" class="max-w-md mx-auto p-4 hidden">
+        <div class="flex justify-between items-center mb-6 px-1">
+            <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
+            <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
+        </div>
 
-<!-- APP -->
-<div id="appPage" class="max-w-md mx-auto p-4 hidden">
+        <div class="budget-card text-white mb-6">
+            <div class="flex justify-between items-start mb-2">
+                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Calculated Spend</p>
+                <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Salary</button>
+            </div>
+            <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
+            <div id="compareBar" class="flex items-center gap-2 mb-6 px-1">
+                <div id="trendIcon" class="w-2 h-2 rounded-full"></div>
+                <p id="compareText" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Syncing...</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-slate-800/50 p-3 rounded-2xl">
+                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Daily Safe</p>
+                    <p id="dailyLimit" class="text-lg font-bold text-emerald-400">₹0</p>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded-2xl text-right">
+                    <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Budget</p>
+                    <p id="salaryDisplay" class="text-lg font-bold text-slate-100">₹0</p>
+                </div>
+            </div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="progressBar" class="h-full bg-blue-500 transition-all duration-700" style="width: 0%"></div></div>
+        </div>
 
-<div class="budget-card text-white mb-6">
-<h2 id="monthlyTotal" class="text-5xl font-black mb-4">₹0</h2>
-<p id="compareText" class="text-xs"></p>
-<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-<div id="progressBar" class="h-full bg-blue-500"></div>
-</div>
-</div>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <button onclick="handleAddCategory()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-slate-600 uppercase shadow-sm">➕ Add Category</button>
+            <button onclick="openModal()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-red-500 uppercase shadow-sm">🗑️ Manage List</button>
+        </div>
 
-<div class="grid grid-cols-3 gap-3 mb-6">
-<button onclick="handleAddCategory()" class="bg-white border p-4 rounded-2xl">➕ Add</button>
-<button onclick="openModal()" class="bg-white border p-4 rounded-2xl">🗑️ Manage</button>
-<button onclick="openBudgetModal()" class="bg-white border p-4 rounded-2xl">📊 Budgets</button>
-</div>
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-6">
+            <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">New Transaction</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none text-lg font-bold">
+                <select id="sector" onchange="toggleSubCategory()" class="p-4 rounded-2xl bg-gray-50 text-sm font-bold outline-none"></select>
+            </div>
+            
+            <div id="subCategoryContainer" class="hidden mb-4">
+                <p class="text-[8px] font-bold text-gray-400 uppercase ml-2 mb-1">Select Bill Type</p>
+                <select id="subSector" class="w-full p-4 rounded-2xl bg-blue-50 text-blue-700 font-bold outline-none">
+                    <option value="💳 Credit Card">💳 Credit Card</option>
+                    <option value="📱 Mobile Recharge">📱 Mobile Recharge</option>
+                    <option value="🌐 Fiber Bill">🌐 Fiber Bill</option>
+                    <option value="⚡ Electricity">⚡ Electricity</option>
+                    <option value="🏠 Rent">🏠 Rent</option>
+                </select>
+            </div>
 
-<div id="history"></div>
+            <div class="flex gap-3 mb-6">
+                <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
+                    <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option>
+                </select>
+                <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
+            </div>
+            <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
+        </div>
 
-</div>
+        <div class="bg-white p-6 rounded-[2rem] border mb-6">
+            <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">Archive Search & Filter</p>
+            <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Deep Search..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-4 border-none outline-none">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-bold text-gray-400 ml-2 uppercase">From</label>
+                    <input id="startDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px]">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-bold text-gray-400 ml-2 uppercase">To</label>
+                    <input id="endDate" type="date" oninput="handleRender()" class="p-3 rounded-xl bg-gray-50 text-[10px]">
+                </div>
+            </div>
+        </div>
 
-<script>
+        <div id="chartSection" class="bg-white p-6 rounded-[2rem] border mb-6 hidden">
+            <p class="text-[10px] font-black uppercase text-gray-400 mb-4 px-1">Spending Breakdown</p>
+            <div id="chartWrapper"><canvas id="categoryBarChart"></canvas></div>
+        </div>
 
-firebase.initializeApp({
-apiKey:"AIzaSyBSfbUpYpgu0kLC2a1I4oEiQjH_zQoxcdE",
-authDomain:"expensetracker-7da2d.firebaseapp.com",
-projectId:"expensetracker-7da2d"
-});
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">Excel Export</button>
+            <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">PDF Report</button>
+        </div>
 
-const db=firebase.firestore(),auth=firebase.auth();
+        <div id="history" class="space-y-3"></div>
+        <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-400 rounded-2xl text-[9px] font-bold uppercase hidden mt-4">Expand History</button>
+    </div>
 
-/* GLOBAL */
-let categories=[];
-let monthlySalary=32000;
-let allExpenses=[],filteredExpenses=[],categoryChart=null,isSeeAll=false,globalFilteredSum=0,activeCatData={};
-let categoryBudgets={};
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyBSfbUpYpgu0kLC2a1I4oEiQjH_zQoxcdE", authDomain: "expensetracker-7da2d.firebaseapp.com", projectId: "expensetracker-7da2d", storageBucket: "expensetracker-7da2d.firebasestorage.app", messagingSenderId: "765154907153", appId: "1:765154907153:web:089afc8966a991c9524db0" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(), auth = firebase.auth();
 
-/* AUTH */
-auth.onAuthStateChanged(user=>{
-if(user){
+        // DEFAULT STATE (Local Storage is Secondary now)
+        let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
+        let monthlySalary = localStorage.getItem('mySalary') || 32000;
+        let allExpenses = [], filteredExpenses = [], categoryChart = null, isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
 
-document.getElementById("loginPage").classList.add("hidden");
-document.getElementById("appPage").classList.remove("hidden");
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('appPage').classList.remove('hidden');
+                document.getElementById('userName').innerText = user.displayName;
 
-db.collection("user_settings").doc(user.uid)
-.onSnapshot(doc=>{
-if(doc.exists){
-const d=doc.data();
+                // 1. LIVE SETTINGS LISTENER (Fixes Cross-Device Issue)
+                db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data.categories) categories = data.categories;
+                        if (data.salary) monthlySalary = data.salary;
+                        
+                        // Update local storage to keep them in sync
+                        localStorage.setItem('myCats', JSON.stringify(categories));
+                        localStorage.setItem('mySalary', monthlySalary);
+                    } else {
+                        // First time? Upload current defaults to cloud
+                        saveSettingsToCloud();
+                    }
+                    // Force Render whenever cloud data changes
+                    handleRender();
+                });
 
-if(d.categories) categories=d.categories;
-if(d.salary) monthlySalary=d.salary;
-if(d.categoryBudgets) categoryBudgets=d.categoryBudgets;
+                // 2. LIVE EXPENSE LISTENER
+                db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
+                    allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
+                    handleRender();
+                });
+            } else { 
+                document.getElementById('loginPage').classList.remove('hidden'); 
+            }
+        });
 
-}else saveSettingsToCloud();
+        // Helper to push to cloud
+        function saveSettingsToCloud() {
+            if (auth.currentUser) {
+                db.collection('user_settings').doc(auth.currentUser.uid).set({
+                    categories: categories,
+                    salary: monthlySalary
+                }, { merge: true });
+            }
+        }
 
-handleRender();
-});
+        function toggleSubCategory() { 
+            const isBills = document.getElementById('sector').value === "Bills";
+            document.getElementById('subCategoryContainer').classList.toggle('hidden', !isBills); 
+        }
 
-db.collection("expenses")
-.where("uid","==",user.uid)
-.onSnapshot(s=>{
-allExpenses=s.docs.map(d=>({id:d.id,...d.data()}));
-handleRender();
-});
+        async function handleSaveExpense() {
+            const amount = document.getElementById('amount').value, date = document.getElementById('date').value;
+            const sector = document.getElementById('sector').value, sub = document.getElementById('subSector').value;
+            const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
+            if (!amount || !date) return alert("Fill Amount & Date");
+            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
+            document.getElementById('amount').value = "";
+        }
 
-}else{
-document.getElementById("loginPage").classList.remove("hidden");
-}
-});
+        function handleRender() {
+            const now = new Date();
+            const daysLeft = Math.max(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate() + 1, 1);
+            let mSum = 0, lastMSum = 0, fSum = 0;
+            activeCatData = {};
+            
+            const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
+            const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
-/* CLOUD SAVE */
-function saveSettingsToCloud(){
-if(auth.currentUser){
-db.collection("user_settings").doc(auth.currentUser.uid).set({
-categories,
-salary:monthlySalary,
-categoryBudgets
-},{merge:true});
-}
-}
+            allExpenses.forEach(ex => {
+                const exD = new Date(ex.date);
+                if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
+                if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
+            });
 
-/* CATEGORY */
-function handleAddCategory(){
-let n=prompt("New Category:");
-if(!n)return;
-categories.push(n.trim());
-saveSettingsToCloud();
-handleRender();
-}
+            // Default View = Current Month Only
+            const isDefaultView = !sDate && !eDate && terms.length === 0;
 
-/* MODALS */
-function openModal(){document.getElementById("manageModal").classList.add("active");renderManageList();}
-function closeModal(){document.getElementById("manageModal").classList.remove("active");}
+            filteredExpenses = allExpenses.filter(ex => {
+                const exDate = new Date(ex.date);
+                if (isDefaultView) {
+                    const isCurrentMonth = exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear();
+                    if (isCurrentMonth) {
+                        fSum += ex.amount;
+                        activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + ex.amount;
+                    }
+                    return isCurrentMonth;
+                }
+                const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
+                const combined = `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase();
+                const matchSearch = terms.every(t => combined.includes(t));
+                if (matchDate && matchSearch) { 
+                    fSum += ex.amount; 
+                    activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + ex.amount; 
+                }
+                return matchDate && matchSearch;
+            });
 
-function openBudgetModal(){
-document.getElementById("budgetModal").classList.add("active");
-renderBudgetList();
-}
-function closeBudgetModal(){
-document.getElementById("budgetModal").classList.remove("active");
-}
+            globalFilteredSum = fSum;
 
-/* BUDGET UI */
-function renderBudgetList(){
-document.getElementById("budgetList").innerHTML=
-categories.map(cat=>`
-<div class="flex justify-between bg-gray-50 p-4 rounded-xl">
-<span class="font-bold">${cat}</span>
-<input type="number"
-value="${categoryBudgets[cat]||""}"
-placeholder="₹ Limit"
-oninput="updateCategoryBudget('${cat}',this.value)"
-class="w-28 p-2 rounded-lg bg-white border"/>
-</div>`).join("");
-}
+            document.getElementById('monthlyTotal').innerText = `₹${globalFilteredSum.toLocaleString('en-IN')}`;
+            document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
+            document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
+            
+            // Populate Dropdown
+            document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
 
-function updateCategoryBudget(cat,val){
-if(!val) delete categoryBudgets[cat];
-else categoryBudgets[cat]=parseFloat(val);
-saveSettingsToCloud();
-}
+            // Trend
+            const diff = mSum - lastMSum;
+            if (lastMSum > 0) {
+                const perc = Math.abs(((diff/lastMSum)*100).toFixed(0));
+                document.getElementById('compareText').innerText = `${perc}% ${diff > 0 ? 'HIGHER' : 'LOWER'} THAN LAST MONTH`;
+                document.getElementById('trendIcon').className = `w-2 h-2 rounded-full ${diff > 0 ? 'bg-red-400' : 'bg-emerald-400'}`;
+            }
 
-/* REMOVE CAT PATCH */
-function removeCat(c){
-if(confirm("Delete?")){
-categories=categories.filter(i=>i!==c);
-delete categoryBudgets[c];
-saveSettingsToCloud();
-renderManageList();
-handleRender();
-}
-}
+            // History
+            document.getElementById('history').innerHTML = filteredExpenses.slice(0, isSeeAll ? filteredExpenses.length : 10).map(ex => `
+                <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
+                    <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
+                    <div class="flex items-center gap-4"><p class="font-black">₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
+                </div>`).join('');
+            
+            document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
+            document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse History" : "Expand History";
 
-/* HISTORY RENDER PATCH */
-function handleRender(){
+            // Chart
+            if (Object.keys(activeCatData).length > 0) {
+                document.getElementById('chartSection').classList.remove('hidden');
+                updateChart(activeCatData);
+            } else {
+                document.getElementById('chartSection').classList.add('hidden');
+                if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+            }
+        }
 
-document.getElementById("history").innerHTML=filteredExpenses.map(ex=>`
-<div class="bg-white p-4 rounded-2xl flex justify-between border mb-2">
-<p class="font-bold ${
-categoryBudgets[ex.sector] &&
-activeCatData[ex.sector]>categoryBudgets[ex.sector]
-?"text-red-600":"text-slate-700"
-}">${ex.sector}</p>
-<p>₹${ex.amount}</p>
-</div>`).join("");
+        function updateChart(summary) {
+            const ctx = document.getElementById('categoryBarChart').getContext('2d');
+            const labels = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
+            document.getElementById('chartWrapper').style.height = `${labels.length * 40}px`;
+            const data = { labels, datasets: [{ data: labels.map(l => summary[l]), backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 20 }] };
+            if (categoryChart) categoryChart.destroy();
+            categoryChart = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } } } });
+        }
 
-}
+        async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
+        
+        function handleSetSalary() { 
+            const s = prompt("Salary:"); 
+            if(s) { monthlySalary = s; saveSettingsToCloud(); handleRender(); } 
+        }
+        
+        function handleAddCategory() { 
+            const n = prompt("New Category:"); 
+            if(n) { categories.push(n); saveSettingsToCloud(); handleRender(); } 
+        }
+        
+        function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
+        function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
+        function closeModal() { document.getElementById('manageModal').classList.remove('active'); }
+        
+        function renderManageList() {
+            const q = document.getElementById('catSearch').value.toLowerCase();
+            document.getElementById('catList').innerHTML = categories.filter(c => c.toLowerCase().includes(q)).map(c => `
+                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+                    <span class="font-bold text-sm">${c}</span>
+                    <button onclick="removeCat('${c}')" class="text-red-500 font-bold text-xs">Delete</button>
+                </div>`).join('');
+        }
+        
+        function removeCat(c) { 
+            if(confirm("Delete?")) { 
+                categories = categories.filter(i => i !== c); 
+                saveSettingsToCloud(); 
+                renderManageList(); 
+                handleRender(); 
+            } 
+        }
+        
+        function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
+        
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(filteredExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
+        }
+        
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(20); doc.text("Spend Guard Pro Report", 14, 20);
+            doc.setFontSize(10); doc.setTextColor(100); doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+            
+            doc.setDrawColor(200); doc.line(14, 32, 196, 32);
+            doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
+            
+            doc.setFontSize(10);
+            doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
+            doc.text(`Total Spent (View): Rs. ${globalFilteredSum}`, 14, 57);
+            
+            const remaining = monthlySalary - globalFilteredSum;
+            doc.setTextColor(remaining < 0 ? 200 : 0, remaining < 0 ? 0 : 150, 0); 
+            doc.text(`Remaining Balance: Rs. ${remaining}`, 14, 64);
+            doc.setTextColor(0);
 
-/* LOGIN */
-function handleLogin(){
-auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-}
+            const rows = filteredExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
+            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: rows, startY: 75, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
 
-</script>
+            let y = doc.lastAutoTable.finalY + 20;
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(12); doc.text("SPENDING BREAKDOWN (Descending)", 14, y);
+            
+            const sortedKeys = Object.keys(activeCatData).sort((a,b) => activeCatData[b] - activeCatData[a]);
+            sortedKeys.forEach((l, i) => {
+                let barY = y + 10 + (i * 10);
+                if (barY > 280) { doc.addPage(); y = 20; barY = 30; }
+                doc.setFontSize(9); doc.text(`${sanitize(l)}: Rs.${activeCatData[l]}`, 14, barY);
+                doc.setFillColor(59, 130, 246);
+                doc.rect(80, barY - 3, (activeCatData[l]/globalFilteredSum)*100, 4, 'F');
+            });
+            doc.save("SpendGuard_Branded_Report.pdf");
+        }
+
+        function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+        function handleLogout() { auth.signOut(); }
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    </script>
 </body>
 </html>
