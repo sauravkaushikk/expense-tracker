@@ -143,7 +143,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // 1. Load Local Storage (Instant View)
+        // 1. Initial State
         let categories = JSON.parse(localStorage.getItem('myCats')) || ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
         let allExpenses = [], filteredExpenses = [], categoryChart = null, isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
@@ -154,25 +154,29 @@
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
 
-                // 2. SMART SYNC: Check Cloud, but don't overwrite local if Cloud is empty
+                // 2. DEDICATED SETTINGS LISTENER (Fixes Laptop Sync)
                 db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
-                        // Cloud has data - Sync DOWN (Cloud is Truth)
                         const data = doc.data();
-                        if (data.categories) categories = data.categories;
-                        if (data.salary) monthlySalary = data.salary;
-                        
-                        // Update local backup
-                        localStorage.setItem('myCats', JSON.stringify(categories));
-                        localStorage.setItem('mySalary', monthlySalary);
+                        // Trust Cloud Data Over Local
+                        if (data.categories) {
+                            categories = data.categories;
+                            localStorage.setItem('myCats', JSON.stringify(categories));
+                        }
+                        if (data.salary) {
+                            monthlySalary = data.salary;
+                            localStorage.setItem('mySalary', monthlySalary);
+                        }
+                        // FORCE UPDATE DROPDOWNS IMMEDIATELY
+                        refreshDropdowns();
+                        handleRender();
                     } else {
-                        // Cloud is empty - Sync UP (Local is Truth)
+                        // Cloud empty? Upload local data to initialize
                         saveSettingsToCloud();
                     }
-                    handleRender();
-                    if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
                 });
 
+                // 3. EXPENSES LISTENER
                 db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
                     allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                     handleRender();
@@ -182,13 +186,13 @@
             }
         });
 
-        // 3. FORCE SAVE FUNCTION
-        function saveSettingsToCloud() {
-            // Save to Local IMMEDIATELY
-            localStorage.setItem('myCats', JSON.stringify(categories));
-            localStorage.setItem('mySalary', monthlySalary);
+        // 4. SEPARATE DROPDOWN RENDERER (The Critical Fix)
+        function refreshDropdowns() {
+            document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
+        }
 
-            // Save to Cloud if logged in
+        function saveSettingsToCloud() {
             if (auth.currentUser) {
                 db.collection('user_settings').doc(auth.currentUser.uid).set({
                     categories: categories,
@@ -207,7 +211,7 @@
             const amount = document.getElementById('amount').value, date = document.getElementById('date').value;
             const sector = document.getElementById('sector').value, sub = document.getElementById('subSector').value;
             const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
-            if (!amount || !date) return alert("Fill Amount & Date");
+            if (!amount || !date) return alert("Fill details");
             await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
             document.getElementById('amount').value = "";
         }
@@ -221,14 +225,12 @@
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
-            // Month Totals
             allExpenses.forEach(ex => {
                 const exD = new Date(ex.date);
                 if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
                 if (exD.getMonth() === (now.getMonth() || 12) - 1) lastMSum += ex.amount;
             });
 
-            // Default View = Current Month
             const isDefaultView = !sDate && !eDate && terms.length === 0;
 
             filteredExpenses = allExpenses.filter(ex => {
@@ -256,13 +258,11 @@
             document.getElementById('monthlyTotal').innerText = `₹${globalFilteredSum.toLocaleString('en-IN')}`;
             document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
-            
-            // Draw Dropdown
-            document.getElementById('sector').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            
             document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
 
-            // Trend
+            // Ensure dropdown is populated (Safety Check)
+            if (document.getElementById('sector').options.length === 0) refreshDropdowns();
+
             const diff = mSum - lastMSum;
             if (lastMSum > 0) {
                 const perc = Math.abs(((diff/lastMSum)*100).toFixed(0));
@@ -270,7 +270,6 @@
                 document.getElementById('trendIcon').className = `w-2 h-2 rounded-full ${diff > 0 ? 'bg-red-400' : 'bg-emerald-400'}`;
             }
 
-            // History
             document.getElementById('history').innerHTML = filteredExpenses.slice(0, isSeeAll ? filteredExpenses.length : 10).map(ex => `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
                     <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
@@ -280,7 +279,6 @@
             document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
             document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse History" : "Expand History";
 
-            // Chart
             if (Object.keys(activeCatData).length > 0) {
                 document.getElementById('chartSection').classList.remove('hidden');
                 updateChart(activeCatData);
@@ -301,15 +299,14 @@
 
         async function deleteEntry(id) { if(confirm("Delete this expense?")) await db.collection("expenses").doc(id).delete(); }
         
-        // --- CATEGORY ACTIONS (Trigger Save) ---
         function handleSetSalary() { 
             const s = prompt("Salary:"); 
-            if(s) { monthlySalary = s; saveSettingsToCloud(); handleRender(); } 
+            if(s) { monthlySalary = s; saveSettingsToCloud(); } 
         }
         
         function handleAddCategory() { 
             const n = prompt("New Category:"); 
-            if(n) { categories.push(n); saveSettingsToCloud(); handleRender(); } 
+            if(n) { categories.push(n); saveSettingsToCloud(); } 
         }
         
         function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
@@ -329,12 +326,9 @@
             if(confirm("Delete from ALL devices?")) { 
                 categories = categories.filter(i => i !== c); 
                 saveSettingsToCloud(); 
-                renderManageList(); 
-                handleRender(); 
             } 
         }
         
-        // --- EXPORT ---
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
         
         function exportExcel() {
@@ -350,9 +344,7 @@
             
             doc.setDrawColor(200); doc.line(14, 32, 196, 32);
             doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
-            
-            doc.setFontSize(10);
-            doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
+            doc.setFontSize(10); doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
             doc.text(`Total Spent (View): Rs. ${globalFilteredSum}`, 14, 57);
             
             const remaining = monthlySalary - globalFilteredSum;
