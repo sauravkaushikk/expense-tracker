@@ -30,7 +30,6 @@
                 <h3 class="text-xl font-black">Manage Categories</h3>
                 <button onclick="closeModal()" class="text-gray-400 font-bold text-xl">✕</button>
             </div>
-            <p class="text-xs text-gray-500 mb-4">Deleting removes from this device (and cloud if synced).</p>
             <input id="catSearch" oninput="renderManageList()" type="text" placeholder="Search to delete..." class="w-full p-4 bg-gray-100 rounded-2xl mb-4 outline-none font-bold text-sm">
             <div id="catList" class="max-h-60 overflow-y-auto space-y-2 mb-6 custom-scroll"></div>
         </div>
@@ -40,7 +39,7 @@
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
             <h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Offline-First Secure Tracking</p>
+            <p class="text-gray-400 mb-8 text-sm">Secure Sync v2.0</p>
             <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6"> Sign in with Google
             </button>
@@ -48,11 +47,10 @@
     </div>
 
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
-        
         <div class="flex justify-between items-center mb-6 px-1">
             <div class="flex flex-col">
                 <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
-                <p id="syncStatus" class="text-[9px] font-bold text-gray-400">Initializing...</p>
+                <p id="syncStatus" class="text-[9px] font-bold text-gray-400">Loading...</p>
             </div>
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
         </div>
@@ -144,9 +142,11 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // 1. OFFLINE-FIRST: Load Local Data IMMEDIATELY
-        const DEFAULT_CATS = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
-        let categories = JSON.parse(localStorage.getItem('myCats')) || DEFAULT_CATS;
+        // 1. SAFETY: Load LOCAL data first. Never overwrite with defaults if local exists.
+        let savedCats = JSON.parse(localStorage.getItem('myCats'));
+        // If local is empty, use defaults. If not, use local.
+        let categories = (savedCats && savedCats.length > 0) ? savedCats : ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
+        
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
         let allExpenses = [], filteredExpenses = [], categoryChart = null, isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
 
@@ -156,33 +156,41 @@
                 document.getElementById('appPage').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
                 
-                // RENDER LOCAL DATA INSTANTLY
+                // RENDER LOCAL IMMEDIATELY
                 updateDropdowns();
                 handleRender();
 
-                // 2. BACKGROUND SYNC (Doesn't block UI)
-                db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
+                // 2. ATTEMPT SYNC (Safety Wrapper)
+                const docRef = db.collection('user_settings').doc(user.uid);
+                
+                docRef.onSnapshot(doc => {
                     if (doc.exists) {
+                        // We have data in cloud
                         const data = doc.data();
-                        if (data.categories) {
-                            categories = data.categories; 
-                            localStorage.setItem('myCats', JSON.stringify(categories)); // Sync Local
+                        if (data.categories && data.categories.length > 0) {
+                            categories = data.categories; // Trust Cloud
+                            localStorage.setItem('myCats', JSON.stringify(categories));
                         }
                         if (data.salary) {
                             monthlySalary = data.salary;
                             localStorage.setItem('mySalary', monthlySalary);
                         }
-                        
                         setStatus("🟢 Synced");
                         updateDropdowns();
                         handleRender();
                     } else {
-                        // Cloud empty? We stay with Local data. We try to upload later.
-                        console.log("Cloud empty, keeping local.");
+                        // Cloud empty. Upload Local.
+                        saveSettings(true); // 'true' means force upload
                     }
-                }, err => {
-                    console.error("Sync Error:", err);
-                    setStatus("🟠 Local Only (Sync Failed)");
+                }, error => {
+                    // IF PERMISSION DENIED or NETWORK FAIL
+                    console.error("Sync Error:", error);
+                    // CHECK: Do we have local data? If yes, use it.
+                    if (categories.length > 0) {
+                        setStatus("🟠 Local Only (Perm Error)");
+                    } else {
+                        setStatus("🔴 Connection Failed");
+                    }
                 });
 
                 // Expenses Sync
@@ -195,17 +203,22 @@
             }
         });
 
-        // 3. SAFE SAVE (Saves Local FIRST, then Cloud)
-        function saveSettings() {
-            // A. SAVE LOCAL
+        function setStatus(msg) {
+            const el = document.getElementById('syncStatus');
+            el.innerText = msg;
+            if(msg.includes("Local")) el.className = "text-[9px] font-bold text-orange-400";
+            else if(msg.includes("Fail") || msg.includes("Error")) el.className = "text-[9px] font-bold text-red-500";
+            else el.className = "text-[9px] font-bold text-emerald-500";
+        }
+
+        // 3. ROBUST SAVE
+        function saveSettings(forceUpload = false) {
+            // ALWAYS save local first
             localStorage.setItem('myCats', JSON.stringify(categories));
             localStorage.setItem('mySalary', monthlySalary);
-            
-            // B. UPDATE UI
             updateDropdowns();
-            handleRender();
 
-            // C. TRY CLOUD (Fire & Forget)
+            // Then try cloud
             if (auth.currentUser) {
                 setStatus("saving...");
                 db.collection('user_settings').doc(auth.currentUser.uid).set({
@@ -214,24 +227,17 @@
                 }, { merge: true }).then(() => {
                     setStatus("🟢 Synced");
                 }).catch(e => {
-                    console.log("Save failed, keeping local");
-                    setStatus("🟠 Local Only (Sync Failed)");
+                    console.warn("Save failed:", e);
+                    setStatus("🟠 Local Only (Save Failed)");
+                    if(e.code === 'permission-denied') alert("Database Permission Error. Check Console Rules.");
                 });
             }
-        }
-
-        function setStatus(msg) {
-            document.getElementById('syncStatus').innerText = msg;
-            if(msg.includes("Local")) document.getElementById('syncStatus').className = "text-[9px] font-bold text-orange-400";
-            else if(msg.includes("Sync")) document.getElementById('syncStatus').className = "text-[9px] font-bold text-emerald-500";
-            else document.getElementById('syncStatus').className = "text-[9px] font-bold text-gray-400";
         }
 
         function updateDropdowns() {
             const select = document.getElementById('sector');
             const current = select.value;
             select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            // Preserve selection if possible
             if (categories.includes(current)) select.value = current;
             else if(categories.length > 0) select.value = categories[0];
             
@@ -243,13 +249,13 @@
             const n = prompt("New Category Name:"); 
             if(n) { 
                 categories.push(n); 
-                saveSettings(); // Saves Local + Cloud
+                saveSettings(); 
             } 
         }
 
         function handleSetSalary() { 
             const s = prompt("Salary:"); 
-            if(s) { monthlySalary = s; saveSettings(); } 
+            if(s) { monthlySalary = s; saveSettings(); handleRender(); } 
         }
 
         function toggleSubCategory() { 
@@ -263,9 +269,12 @@
             const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
             if (!amount || !date) return alert("Fill details");
             
-            // Optimistic UI could be added here, but Expenses are less critical than Categories for stability
-            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
-            document.getElementById('amount').value = "";
+            try {
+                await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
+                document.getElementById('amount').value = "";
+            } catch(e) {
+                alert("Could not save expense. Check connection.");
+            }
         }
 
         function handleRender() {
@@ -313,7 +322,6 @@
             document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
             document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
 
-            // Safety: Ensure dropdowns are populated
             if(categories.length > 0 && document.getElementById('sector').children.length === 0) updateDropdowns();
 
             const diff = mSum - lastMSum;
