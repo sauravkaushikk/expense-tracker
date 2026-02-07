@@ -39,8 +39,8 @@
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
-            <h1 class="text-3xl font-bold mb-1">Spend Guard</h1>
-            <p class="text-gray-400 mb-8 text-sm">Offline-First Secure Tracking</p>
+            <h1 class="text-3xl font-bold mb-1">Spend Guard Pro</h1>
+            <p class="text-gray-400 mb-8 text-sm">Financial Freedom Starts Here 🚀</p>
             <button onclick="handleLogin()" class="flex items-center justify-center gap-3 w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6"> Sign in with Google
             </button>
@@ -132,8 +132,8 @@
 
         <div id="chartSection" class="bg-white p-6 rounded-[2rem] border mb-6 hidden">
             <p class="text-[10px] font-black uppercase text-gray-400 mb-4 px-1">Spending Breakdown</p>
-            <div class="max-h-[300px] overflow-y-auto pr-2 custom-scroll">
-                <div id="chartWrapper">
+            <div class="overflow-x-auto custom-scroll pb-2">
+                <div id="chartWrapper" class="h-[250px]">
                     <canvas id="categoryBarChart"></canvas>
                 </div>
             </div>
@@ -332,7 +332,7 @@
             }
         }
 
-        // 4. CHART WITH RIGHT PADDING + RED WARNING
+        // 4. VERTICAL BARS + HORIZONTAL SCROLL + TOP LABELS
         function updateChart(summary) {
             const ctx = document.getElementById('categoryBarChart').getContext('2d');
             const labels = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
@@ -344,8 +344,12 @@
                 return (val / salary) * 100 >= 30 ? '#ef4444' : '#3b82f6';
             });
 
-            // Adjust height based on items
-            document.getElementById('chartWrapper').style.height = `${labels.length * 45}px`;
+            // EXPAND WIDTH dynamically based on number of items (Horizontal Scroll Logic)
+            const chartWidth = Math.max(labels.length * 60, 300); // Minimum 300px, adds 60px per bar
+            document.getElementById('chartWrapper').style.width = `${chartWidth}px`;
+            
+            // Fixed height for the wrapper inside the scroll container
+            document.getElementById('chartWrapper').style.height = '250px';
 
             const data = { 
                 labels, 
@@ -353,7 +357,7 @@
                     data: dataPoints, 
                     backgroundColor: backgroundColors, 
                     borderRadius: 8, 
-                    barThickness: 22 
+                    barThickness: 30
                 }] 
             };
 
@@ -363,14 +367,9 @@
                 type: 'bar', 
                 data, 
                 options: { 
-                    indexAxis: 'y', 
+                    indexAxis: 'x', // VERTICAL BARS
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    layout: {
-                        padding: {
-                            right: 50 // PREVENTS TEXT CUTOFF
-                        }
-                    },
                     plugins: { 
                         legend: false,
                         tooltip: {
@@ -378,32 +377,39 @@
                                 label: function(context) {
                                     const val = context.raw;
                                     const pctTotal = ((val / totalSpent) * 100).toFixed(1);
-                                    const pctSalary = ((val / salary) * 100).toFixed(1);
-                                    return [` ₹${val.toLocaleString('en-IN')}`, ` Total: ${pctTotal}%`, ` Salary: ${pctSalary}%`];
+                                    return [` ₹${val.toLocaleString('en-IN')}`, ` Total: ${pctTotal}%`];
                                 }
                             }
                         }
                     }, 
                     scales: { 
-                        x: { display: false, grid: { display: false } }, 
-                        y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' }, padding: 10 } } 
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { font: { size: 10, weight: 'bold' } } 
+                        }, 
+                        y: { 
+                            display: false // Hide Y axis for cleaner UI
+                        } 
                     },
                     animation: {
                         onComplete: function() {
                             const chartInstance = this;
                             const ctx = chartInstance.ctx;
                             ctx.font = "bold 10px sans-serif";
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'middle';
+                            ctx.textAlign = 'center'; // Center text on bar
+                            ctx.textBaseline = 'bottom';
 
                             this.data.datasets.forEach(function(dataset, i) {
                                 const meta = chartInstance.getDatasetMeta(i);
                                 meta.data.forEach(function(bar, index) {
                                     const dataVal = dataset.data[index];
                                     const pctTotal = ((dataVal / totalSpent) * 100).toFixed(1) + '%';
+                                    
                                     const isWarning = (dataVal / salary) * 100 >= 30;
                                     ctx.fillStyle = isWarning ? '#ef4444' : '#64748b'; 
-                                    ctx.fillText(pctTotal, bar.x + 8, bar.y);
+                                    
+                                    // Draw text ABOVE the bar (bar.y - 5)
+                                    ctx.fillText(pctTotal, bar.x, bar.y - 5);
                                 });
                             });
                         }
