@@ -16,7 +16,7 @@
 
     <style>
         .app-logo { background-image: url('logo.png'); background-size: cover; background-position: center; width: 80px; height: 80px; margin-bottom: 20px; border-radius: 22px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .custom-scroll::-webkit-scrollbar { display: none; }
+        .custom-scroll::-webkit-scrollbar { display: none; } /* Hide scrollbar for clean UI */
         .budget-card { background-color: #0f172a; border-radius: 2.5rem; padding: 1.75rem; border-left: 6px solid #3b82f6; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
         .modal.active { display: flex; }
@@ -132,7 +132,11 @@
 
         <div id="chartSection" class="bg-white p-6 rounded-[2rem] border mb-6 hidden">
             <p class="text-[10px] font-black uppercase text-gray-400 mb-4 px-1">Spending Breakdown</p>
-            <div id="chartWrapper"><canvas id="categoryBarChart"></canvas></div>
+            <div class="max-h-[300px] overflow-y-auto pr-2 custom-scroll">
+                <div id="chartWrapper">
+                    <canvas id="categoryBarChart"></canvas>
+                </div>
+            </div>
         </div>
 
         <div id="history" class="space-y-3"></div>
@@ -161,7 +165,7 @@
                 updateDropdowns();
                 handleRender();
 
-                // 2. BACKGROUND SYNC (Safe Mode)
+                // 2. BACKGROUND SYNC
                 db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
                         const data = doc.data();
@@ -177,7 +181,6 @@
                         updateDropdowns();
                         handleRender();
                     } else {
-                        // Cloud empty. Upload Local.
                         saveSettings(true); 
                     }
                 }, err => {
@@ -185,7 +188,6 @@
                     setStatus("🟠 Local Only");
                 });
 
-                // Expenses Sync
                 db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
                     allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                     handleRender();
@@ -203,7 +205,7 @@
             else el.className = "text-[9px] font-bold text-emerald-500";
         }
 
-        // 3. SAFE SAVE (Saves Local FIRST, then Cloud)
+        // 3. SAFE SAVE
         function saveSettings(forceUpload = false) {
             localStorage.setItem('myCats', JSON.stringify(categories));
             localStorage.setItem('mySalary', monthlySalary);
@@ -330,22 +332,19 @@
             }
         }
 
-        // 4. NEW ANALYTICS CHART (Red Alert + Percentages)
+        // 4. CHART WITH RIGHT PADDING + RED WARNING
         function updateChart(summary) {
             const ctx = document.getElementById('categoryBarChart').getContext('2d');
             const labels = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
-            
-            // Calc Totals
             const totalSpent = Object.values(summary).reduce((a, b) => a + b, 0);
             const salary = parseFloat(monthlySalary) || 1; 
 
-            // Logic: 30% of Salary Threshold
             const dataPoints = labels.map(l => summary[l]);
             const backgroundColors = dataPoints.map(val => {
-                const percentOfSalary = (val / salary) * 100;
-                return percentOfSalary >= 30 ? '#ef4444' : '#3b82f6'; // Red or Blue
+                return (val / salary) * 100 >= 30 ? '#ef4444' : '#3b82f6';
             });
 
+            // Adjust height based on items
             document.getElementById('chartWrapper').style.height = `${labels.length * 45}px`;
 
             const data = { 
@@ -367,6 +366,11 @@
                     indexAxis: 'y', 
                     responsive: true, 
                     maintainAspectRatio: false, 
+                    layout: {
+                        padding: {
+                            right: 50 // PREVENTS TEXT CUTOFF
+                        }
+                    },
                     plugins: { 
                         legend: false,
                         tooltip: {
@@ -375,21 +379,14 @@
                                     const val = context.raw;
                                     const pctTotal = ((val / totalSpent) * 100).toFixed(1);
                                     const pctSalary = ((val / salary) * 100).toFixed(1);
-                                    return [
-                                        ` Amount: ₹${val.toLocaleString('en-IN')}`,
-                                        ` % of Total Spend: ${pctTotal}%`,
-                                        ` % of Salary: ${pctSalary}%`
-                                    ];
+                                    return [` ₹${val.toLocaleString('en-IN')}`, ` Total: ${pctTotal}%`, ` Salary: ${pctSalary}%`];
                                 }
                             }
                         }
                     }, 
                     scales: { 
                         x: { display: false, grid: { display: false } }, 
-                        y: { 
-                            grid: { display: false }, 
-                            ticks: { font: { size: 11, weight: 'bold' }, padding: 10 } 
-                        } 
+                        y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' }, padding: 10 } } 
                     },
                     animation: {
                         onComplete: function() {
@@ -404,11 +401,8 @@
                                 meta.data.forEach(function(bar, index) {
                                     const dataVal = dataset.data[index];
                                     const pctTotal = ((dataVal / totalSpent) * 100).toFixed(1) + '%';
-                                    
-                                    // Make text red if bar is red
                                     const isWarning = (dataVal / salary) * 100 >= 30;
                                     ctx.fillStyle = isWarning ? '#ef4444' : '#64748b'; 
-                                    
                                     ctx.fillText(pctTotal, bar.x + 8, bar.y);
                                 });
                             });
@@ -470,3 +464,5 @@
     </script>
 </body>
 </html>
+
+```
