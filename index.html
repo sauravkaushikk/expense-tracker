@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spend Guard Pro</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -63,7 +67,7 @@
             <div class="budget-card text-white mb-6">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Calculated Spend</p>
-                    <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Salary</button>
+                    <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Base Salary</button>
                 </div>
                 <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
                 <div class="grid grid-cols-2 gap-4 mb-4">
@@ -72,8 +76,9 @@
                         <p id="dailyLimit" class="text-lg font-bold text-emerald-400">₹0</p>
                     </div>
                     <div class="bg-slate-800/50 p-3 rounded-2xl text-right">
-                        <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Budget</p>
+                        <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Total Budget</p>
                         <p id="salaryDisplay" class="text-lg font-bold text-slate-100">₹0</p>
+                        <p id="extraIncomeDisplay" class="text-[9px] font-bold text-emerald-400 mt-[-2px] hidden">+₹0 Extra</p>
                     </div>
                 </div>
                 <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="progressBar" class="h-full bg-blue-500 transition-all duration-700" style="width: 0%"></div></div>
@@ -85,7 +90,12 @@
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-6">
-                <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">New Transaction</p>
+                
+                <div class="flex gap-2 mb-4 bg-gray-50 p-1 rounded-2xl border">
+                    <button id="typeExpBtn" onclick="setEntryType('expense')" class="w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all">📉 Expense</button>
+                    <button id="typeIncBtn" onclick="setEntryType('income')" class="w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all">📈 Income</button>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none text-lg font-bold">
                     <select id="sector" onchange="toggleSubCategory()" class="p-4 rounded-2xl bg-gray-50 text-sm font-bold outline-none"></select>
@@ -106,12 +116,12 @@
                     </select>
                     <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
                 </div>
-                <button onclick="handleSaveExpense()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
+                <button id="saveBtn" onclick="handleSaveEntry()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] border mb-6">
                 <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">Search & Filter</p>
-                <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search expenses..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-2 border-none outline-none">
+                <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search entries..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-2 border-none outline-none">
                 <div id="filterChips" class="flex gap-2 overflow-x-auto pb-4 mb-2 custom-scroll"></div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1">
@@ -136,7 +146,7 @@
             </div>
 
             <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border mb-6">
-                <p class="text-[10px] font-black uppercase text-gray-400 mb-4">Current vs Previous</p>
+                <p class="text-[10px] font-black uppercase text-gray-400 mb-4">Current vs Previous (Expenses)</p>
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <p class="text-xs text-gray-400 font-bold mb-1">THIS MONTH</p>
@@ -157,7 +167,7 @@
             </div>
 
             <div id="alertSection" class="hidden bg-red-50 p-6 rounded-[2.5rem] border border-red-100 mb-6">
-                <p class="text-[10px] font-black uppercase text-red-400 mb-3">⚠️ Over Budget (>30% Salary)</p>
+                <p class="text-[10px] font-black uppercase text-red-400 mb-3">⚠️ Over Budget (>30% Total Budget)</p>
                 <div id="alertList" class="space-y-2"></div>
             </div>
 
@@ -223,14 +233,28 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW failed', err));
+            });
+        }
+
         // STATE
         const DEFAULT_CATS = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
+        const INCOME_CATS = ["💰 Freelance", "🏆 Bonus", "💵 Refund", "🎁 Gift", "📈 Other"];
+        
         let savedCats = JSON.parse(localStorage.getItem('myCats'));
         let categories = (savedCats && savedCats.length > 0) ? savedCats : DEFAULT_CATS;
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
-        let allExpenses = [], filteredExpenses = [], categoryChart = null, trendChart = null, customChart = null;
-        let isSeeAll = false, globalFilteredSum = 0, activeCatData = {};
+        
+        let allEntries = [], filteredEntries = [];
+        let categoryChart = null, trendChart = null, customChart = null;
+        let isSeeAll = false, globalFilteredSum = 0;
         let currentTab = 'dashboard';
+        let currentEntryType = 'expense'; // 'expense' or 'income'
+        let currentMonthExtraIncome = 0;
+        let currentMonthEffectiveBudget = parseFloat(monthlySalary);
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -240,7 +264,6 @@
                 document.getElementById('userName').innerText = user.displayName;
                 
                 updateDropdowns();
-                handleRender();
 
                 db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
@@ -254,13 +277,39 @@
                 }, err => setStatus("🟠 Local Only"));
 
                 db.collection("expenses").where("uid", "==", user.uid).onSnapshot(snap => {
-                    allExpenses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
+                    allEntries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                     handleRender();
                 });
             } else { 
                 document.getElementById('loginPage').classList.remove('hidden'); 
             }
         });
+
+        // --- FORM TOGGLE LOGIC ---
+        function setEntryType(type) {
+            currentEntryType = type;
+            const expBtn = document.getElementById('typeExpBtn');
+            const incBtn = document.getElementById('typeIncBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const subCat = document.getElementById('subCategoryContainer');
+            
+            if (type === 'expense') {
+                expBtn.className = "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all";
+                incBtn.className = "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
+                saveBtn.innerText = "Add Expense";
+                saveBtn.className = "w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all";
+                updateDropdowns(); // loads expense categories
+            } else {
+                incBtn.className = "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-emerald-600 uppercase transition-all";
+                expBtn.className = "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
+                saveBtn.innerText = "Add Extra Income";
+                saveBtn.className = "w-full bg-emerald-500 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all";
+                
+                const select = document.getElementById('sector');
+                select.innerHTML = INCOME_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+                subCat.classList.add('hidden');
+            }
+        }
 
         // --- NAVIGATION ---
         function switchTab(tab) {
@@ -322,12 +371,13 @@
         }
 
         function updateDropdowns() {
-            const select = document.getElementById('sector');
-            const current = select.value;
-            select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            if (categories.includes(current)) select.value = current;
-            else if(categories.length > 0) select.value = categories[0];
-            
+            if (currentEntryType === 'expense') {
+                const select = document.getElementById('sector');
+                const current = select.value;
+                select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (categories.includes(current)) select.value = current;
+                else if(categories.length > 0) select.value = categories[0];
+            }
             renderFilterChips(); 
             if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
         }
@@ -337,19 +387,29 @@
             const now = new Date();
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysLeft = Math.max(daysInMonth - now.getDate() + 1, 1);
+            
             let mSum = 0;
+            currentMonthExtraIncome = 0;
             
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
-            allExpenses.forEach(ex => {
+            // Separate Incomes and Expenses for calculations
+            allEntries.forEach(ex => {
                 const exD = new Date(ex.date);
-                if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) mSum += ex.amount;
+                const isThisMonth = exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear();
+                
+                if (isThisMonth) {
+                    if (ex.type === 'income') currentMonthExtraIncome += ex.amount;
+                    else mSum += ex.amount;
+                }
             });
+
+            currentMonthEffectiveBudget = parseFloat(monthlySalary) + currentMonthExtraIncome;
 
             const isDefaultView = !sDate && !eDate && terms.length === 0;
 
-            filteredExpenses = allExpenses.filter(ex => {
+            filteredEntries = allEntries.filter(ex => {
                 const exDate = new Date(ex.date);
                 if (isDefaultView) return exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear();
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
@@ -357,20 +417,37 @@
                 return matchDate && matchSearch;
             });
 
-            document.getElementById('monthlyTotal').innerText = `₹${filteredExpenses.reduce((a,b)=>a+b.amount,0).toLocaleString('en-IN')}`;
-            document.getElementById('dailyLimit').innerText = `₹${Math.max((monthlySalary - mSum)/daysLeft, 0).toFixed(0)}`;
-            document.getElementById('salaryDisplay').innerText = `₹${monthlySalary}`;
-            document.getElementById('progressBar').style.width = Math.min((mSum/monthlySalary)*100, 100) + "%";
+            // Calculate "Calculated Spend" purely on Expenses
+            const filteredExpensesOnly = filteredEntries.filter(e => e.type !== 'income');
+            document.getElementById('monthlyTotal').innerText = `₹${filteredExpensesOnly.reduce((a,b)=>a+b.amount,0).toLocaleString('en-IN')}`;
+            
+            // Budget UI Updates
+            document.getElementById('dailyLimit').innerText = `₹${Math.max((currentMonthEffectiveBudget - mSum)/daysLeft, 0).toFixed(0)}`;
+            document.getElementById('salaryDisplay').innerText = `₹${currentMonthEffectiveBudget.toLocaleString('en-IN')}`;
+            
+            const extraUI = document.getElementById('extraIncomeDisplay');
+            if (currentMonthExtraIncome > 0) {
+                extraUI.innerText = `+₹${currentMonthExtraIncome.toLocaleString('en-IN')} Extra`;
+                extraUI.classList.remove('hidden');
+            } else {
+                extraUI.classList.add('hidden');
+            }
 
-            if(categories.length > 0 && document.getElementById('sector').children.length === 0) updateDropdowns();
+            document.getElementById('progressBar').style.width = Math.min((mSum/currentMonthEffectiveBudget)*100, 100) + "%";
 
-            document.getElementById('history').innerHTML = filteredExpenses.slice(0, isSeeAll ? filteredExpenses.length : 10).map(ex => `
+            // History List (Mix of Incomes and Expenses)
+            document.getElementById('history').innerHTML = filteredEntries.slice(0, isSeeAll ? filteredEntries.length : 10).map(ex => {
+                const isInc = ex.type === 'income';
+                const sign = isInc ? '+' : '';
+                const color = isInc ? 'text-emerald-500' : 'text-slate-800';
+                return `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
                     <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
-                    <div class="flex items-center gap-4"><p class="font-black">₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
-                </div>`).join('');
+                    <div class="flex items-center gap-4"><p class="font-black ${color}">${sign}₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
+                </div>`
+            }).join('');
             
-            document.getElementById('seeAllBtn').classList.toggle('hidden', filteredExpenses.length <= 10);
+            document.getElementById('seeAllBtn').classList.toggle('hidden', filteredEntries.length <= 10);
             document.getElementById('seeAllBtn').innerText = isSeeAll ? "Collapse History" : "Expand History";
 
             if (currentTab === 'insights') renderInsights();
@@ -381,10 +458,12 @@
         function renderInsights() {
             const now = new Date();
             let thisMonthSum = 0, lastMonthSum = 0;
-            activeCatData = {};
+            let activeCatData = {};
 
-            // 1. STANDARD THIS MONTH DATA
-            allExpenses.forEach(ex => {
+            // ONLY PROCESS EXPENSES FOR ANALYTICS
+            const expensesOnly = allEntries.filter(e => e.type !== 'income');
+
+            expensesOnly.forEach(ex => {
                 const exD = new Date(ex.date);
                 if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) {
                     thisMonthSum += ex.amount;
@@ -418,19 +497,19 @@
             }
 
             let alertsHtml = '';
-            const salary = parseFloat(monthlySalary) || 1;
+            // Alert uses EFFECTIVE budget
             Object.keys(activeCatData).forEach(cat => {
                 const amount = activeCatData[cat];
-                if ((amount / salary) * 100 >= 30) {
+                if ((amount / currentMonthEffectiveBudget) * 100 >= 30) {
                     alertsHtml += `<div class="bg-white p-3 rounded-xl flex justify-between items-center"><span class="font-bold text-xs text-slate-700">${cat}</span><span class="font-black text-xs text-red-500">₹${amount}</span></div>`;
                 }
             });
             document.getElementById('alertSection').classList.toggle('hidden', !alertsHtml);
             document.getElementById('alertList').innerHTML = alertsHtml;
 
-            updateChart(activeCatData);
+            updateChart(activeCatData, 'categoryBarChart', chartWrapper);
 
-            // 2. CUSTOM DATE RANGE DATA
+            // CUSTOM DATE RANGE DATA (Expenses only)
             const sDate = document.getElementById('startDate').value;
             const eDate = document.getElementById('endDate').value;
             
@@ -439,28 +518,25 @@
                 document.getElementById('customRangeLabel').innerText = `${sDate ? sDate : 'Beginning'} to ${eDate ? eDate : 'Today'}`;
                 
                 let customCatData = {};
-                allExpenses.forEach(ex => {
+                expensesOnly.forEach(ex => {
                     const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
                     if (matchDate) {
                         customCatData[ex.sector] = (customCatData[ex.sector] || 0) + ex.amount;
                     }
                 });
-                
                 updateCustomChart(customCatData);
             } else {
                 document.getElementById('customRangeSection').classList.add('hidden');
             }
         }
 
-        // Standard This Month Chart
         function updateChart(summary) {
             const ctx = document.getElementById('categoryBarChart').getContext('2d');
             const labels = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
             const totalSpent = Object.values(summary).reduce((a, b) => a + b, 0);
-            const salary = parseFloat(monthlySalary) || 1; 
 
             const dataPoints = labels.map(l => summary[l]);
-            const backgroundColors = dataPoints.map(val => (val / salary) * 100 >= 30 ? '#ef4444' : '#3b82f6');
+            const backgroundColors = dataPoints.map(val => (val / currentMonthEffectiveBudget) * 100 >= 30 ? '#ef4444' : '#3b82f6');
 
             const chartWidth = Math.max(labels.length * 60, 300);
             document.getElementById('chartWrapper').style.width = `${chartWidth}px`;
@@ -484,7 +560,7 @@
                                 meta.data.forEach((bar, index) => {
                                     const val = ds.data[index];
                                     const pct = ((val/totalSpent)*100).toFixed(1) + '%';
-                                    ctx.fillStyle = (val/salary)*100 >= 30 ? '#ef4444' : '#64748b';
+                                    ctx.fillStyle = (val/currentMonthEffectiveBudget)*100 >= 30 ? '#ef4444' : '#64748b';
                                     ctx.fillText(pct, bar.x, bar.y - 5);
                                 });
                             });
@@ -494,22 +570,18 @@
             });
         }
 
-        // Custom Filter Chart (Purple/Indigo)
         function updateCustomChart(summary) {
             const ctx = document.getElementById('customBarChart').getContext('2d');
             const labels = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
             const totalSpent = Object.values(summary).reduce((a, b) => a + b, 0);
-            const salary = parseFloat(monthlySalary) || 1; 
 
             const dataPoints = labels.map(l => summary[l]);
-            // Use Indigo color for custom chart, red if > 30% of standard monthly salary
-            const backgroundColors = dataPoints.map(val => (val / salary) * 100 >= 30 ? '#ef4444' : '#6366f1');
+            const backgroundColors = dataPoints.map(val => (val / currentMonthEffectiveBudget) * 100 >= 30 ? '#ef4444' : '#6366f1');
 
             const chartWidth = Math.max(labels.length * 60, 300);
             document.getElementById('customChartWrapper').style.width = `${chartWidth}px`;
             
             if (customChart) customChart.destroy();
-            
             if(labels.length === 0) return;
 
             customChart = new Chart(ctx, { 
@@ -529,7 +601,7 @@
                                 meta.data.forEach((bar, index) => {
                                     const val = ds.data[index];
                                     const pct = ((val/totalSpent)*100).toFixed(1) + '%';
-                                    ctx.fillStyle = (val/salary)*100 >= 30 ? '#ef4444' : '#64748b';
+                                    ctx.fillStyle = (val/currentMonthEffectiveBudget)*100 >= 30 ? '#ef4444' : '#64748b';
                                     ctx.fillText(pct, bar.x, bar.y - 5);
                                 });
                             });
@@ -539,12 +611,13 @@
             });
         }
 
-        // --- TRENDS RENDER ---
+        // --- TRENDS RENDER (EXPENSES ONLY) ---
         function renderTrends() {
             const monthlyData = {};
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const expensesOnly = allEntries.filter(e => e.type !== 'income');
 
-            allExpenses.forEach(ex => {
+            expensesOnly.forEach(ex => {
                 const date = new Date(ex.date);
                 const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 monthlyData[key] = (monthlyData[key] || 0) + ex.amount;
@@ -635,18 +708,33 @@
         }
 
         // --- UTILS ---
-        async function handleSaveExpense() {
-            const amount = document.getElementById('amount').value, date = document.getElementById('date').value;
-            const sector = document.getElementById('sector').value, sub = document.getElementById('subSector').value;
-            const finalSector = sector === "Bills" ? `🧾 Bill: ${sub}` : sector;
-            if (!amount || !date) return alert("Fill details");
-            await db.collection("expenses").add({ amount: parseFloat(amount), sector: finalSector, method: document.getElementById('method').value, date, uid: auth.currentUser.uid });
+        async function handleSaveEntry() {
+            const amount = document.getElementById('amount').value;
+            const date = document.getElementById('date').value;
+            const sector = document.getElementById('sector').value;
+            const sub = document.getElementById('subSector').value;
+            
+            const finalSector = (currentEntryType === 'expense' && sector === "Bills") ? `🧾 Bill: ${sub}` : sector;
+            if (!amount || !date) return alert("Please fill details");
+            
+            await db.collection("expenses").add({ 
+                amount: parseFloat(amount), 
+                sector: finalSector, 
+                method: document.getElementById('method').value, 
+                date, 
+                type: currentEntryType, // Saves as 'expense' or 'income'
+                uid: auth.currentUser.uid 
+            });
             document.getElementById('amount').value = "";
         }
         function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); saveSettings(); } }
-        function handleSetSalary() { const s = prompt("Salary:"); if(s) { monthlySalary = s; saveSettings(); handleRender(); } }
-        function toggleSubCategory() { document.getElementById('subCategoryContainer').classList.toggle('hidden', document.getElementById('sector').value !== "Bills"); }
-        async function deleteEntry(id) { if(confirm("Delete?")) await db.collection("expenses").doc(id).delete(); }
+        function handleSetSalary() { const s = prompt("Base Salary:"); if(s) { monthlySalary = s; saveSettings(); handleRender(); } }
+        function toggleSubCategory() { 
+            if(currentEntryType === 'expense') {
+                document.getElementById('subCategoryContainer').classList.toggle('hidden', document.getElementById('sector').value !== "Bills"); 
+            }
+        }
+        async function deleteEntry(id) { if(confirm("Delete this entry?")) await db.collection("expenses").doc(id).delete(); }
         function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
         function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
         function closeModal() { document.getElementById('manageModal').classList.remove('active'); }
@@ -661,7 +749,7 @@
         function removeCat(c) { if(confirm("Delete?")) { categories = categories.filter(i => i !== c); saveSettings(); } }
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
         function exportExcel() {
-            const ws = XLSX.utils.json_to_sheet(allExpenses.map(ex => ({ Date: ex.date, Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
+            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
         function exportPDF() {
@@ -670,9 +758,9 @@
             doc.setFontSize(10); doc.setTextColor(100); doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
             doc.setDrawColor(200); doc.line(14, 32, 196, 32);
             doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
-            doc.setFontSize(10); doc.text(`Assigned Salary: Rs. ${monthlySalary}`, 14, 50);
-            const rows = allExpenses.map(ex => [ex.date, sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
-            doc.autoTable({ head: [['Date', 'Category', 'Method', 'Amount']], body: rows, startY: 60, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
+            doc.setFontSize(10); doc.text(`Effective Budget (Salary + Extra): Rs. ${currentMonthEffectiveBudget}`, 14, 50);
+            const rows = allEntries.map(ex => [ex.date, ex.type==='income'?'Income':'Expense', sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
+            doc.autoTable({ head: [['Date', 'Type', 'Category', 'Method', 'Amount']], body: rows, startY: 60, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
             doc.save("SpendGuard_Branded_Report.pdf");
         }
         function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
@@ -681,4 +769,3 @@
     </script>
 </body>
 </html>
-```
