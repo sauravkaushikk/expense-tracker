@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spend Guard Pro</title>
+    <!-- PWA Setup -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -14,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -30,10 +32,11 @@
 </head>
 <body class="bg-gray-50 text-slate-800 pb-24 custom-scroll">
 
+    <!-- Category Modal -->
     <div id="manageModal" class="modal z-50">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-black">Manage Categories</h3>
+                <h3 id="manageModalTitle" class="text-xl font-black">Manage Categories</h3>
                 <button onclick="closeModal()" class="text-gray-400 font-bold text-xl">✕</button>
             </div>
             <p class="text-xs text-gray-500 mb-4">Deleting removes from this device (and cloud if synced).</p>
@@ -42,6 +45,7 @@
         </div>
     </div>
 
+    <!-- Login -->
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
             <div class="app-logo"></div>
@@ -53,8 +57,10 @@
         </div>
     </div>
 
+    <!-- Main App Container -->
     <div id="appPage" class="max-w-md mx-auto p-4 hidden">
         
+        <!-- Header -->
         <div class="flex justify-between items-center mb-6 px-1">
             <div class="flex flex-col">
                 <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
@@ -63,6 +69,7 @@
             <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
         </div>
 
+        <!-- VIEW 1: DASHBOARD (HOME) -->
         <div id="viewDashboard">
             <div class="budget-card text-white mb-6">
                 <div class="flex justify-between items-start mb-2">
@@ -84,13 +91,16 @@
                 <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="progressBar" class="h-full bg-blue-500 transition-all duration-700" style="width: 0%"></div></div>
             </div>
 
+            <!-- Controls -->
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <button onclick="handleAddCategory()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-slate-600 uppercase shadow-sm">➕ Add Category</button>
                 <button onclick="openModal()" class="bg-white border p-4 rounded-2xl text-[10px] font-bold text-red-500 uppercase shadow-sm">🗑️ Manage List</button>
             </div>
 
+            <!-- Entry Form -->
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-6">
                 
+                <!-- Type Toggle -->
                 <div class="flex gap-2 mb-4 bg-gray-50 p-1 rounded-2xl border">
                     <button id="typeExpBtn" onclick="setEntryType('expense')" class="w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all">📉 Expense</button>
                     <button id="typeIncBtn" onclick="setEntryType('income')" class="w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all">📈 Income</button>
@@ -119,6 +129,7 @@
                 <button id="saveBtn" onclick="handleSaveEntry()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
             </div>
 
+            <!-- Filters & History -->
             <div class="bg-white p-6 rounded-[2rem] border mb-6">
                 <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">Search & Filter</p>
                 <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search entries..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-2 border-none outline-none">
@@ -139,30 +150,18 @@
             <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-400 rounded-2xl text-[9px] font-bold uppercase hidden mt-4">Expand History</button>
         </div>
 
+        <!-- VIEW 2: INSIGHTS -->
         <div id="viewInsights" class="hidden">
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <button onclick="exportExcel()" class="bg-emerald-50 text-emerald-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-emerald-100">Excel Export</button>
                 <button onclick="exportPDF()" class="bg-rose-50 text-rose-700 p-3 rounded-2xl text-[9px] font-bold uppercase border border-rose-100">PDF Report</button>
             </div>
 
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border mb-6">
-                <p class="text-[10px] font-black uppercase text-gray-400 mb-4">Current vs Previous (Expenses)</p>
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <p class="text-xs text-gray-400 font-bold mb-1">THIS MONTH</p>
-                        <p id="compThisMonth" class="text-2xl font-black text-slate-800">₹0</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-gray-400 font-bold mb-1">LAST MONTH</p>
-                        <p id="compLastMonth" class="text-2xl font-black text-slate-400">₹0</p>
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-2xl flex items-center gap-3">
-                    <div id="compIcon" class="w-10 h-10 rounded-full flex items-center justify-center text-xl"></div>
-                    <div>
-                        <p id="compDiff" class="font-black text-sm">Analyzing...</p>
-                        <p id="compMsg" class="text-[10px] text-gray-400 font-bold uppercase">Vs Previous Month</p>
-                    </div>
+            <!-- Swipeable Comparison Cards -->
+            <div class="mb-6">
+                <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">Performance Overview</p>
+                <div id="comparisonContainer" class="flex gap-4 overflow-x-auto custom-scroll pb-4 snap-x snap-mandatory px-1">
+                    <!-- Injected by JS -->
                 </div>
             </div>
 
@@ -195,9 +194,16 @@
             </div>
         </div>
 
+        <!-- VIEW 3: TRENDS -->
         <div id="viewTrends" class="hidden">
+            <!-- Timeline Toggle -->
+            <div class="flex gap-2 mb-6 bg-gray-200/50 p-1 rounded-2xl border mx-1">
+                <button id="trendMonthBtn" onclick="setTrendType('month')" class="w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all">MoM View</button>
+                <button id="trendYearBtn" onclick="setTrendType('year')" class="w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all">YoY View</button>
+            </div>
+
             <div class="bg-white p-6 rounded-[2rem] border mb-6">
-                <p class="text-[10px] font-black uppercase text-gray-400 mb-4 px-1">Month-over-Month Timeline</p>
+                <p id="trendChartTitle" class="text-[10px] font-black uppercase text-gray-400 mb-4 px-1">Month-over-Month Timeline</p>
                 <div class="overflow-x-auto custom-scroll pb-2">
                     <div id="trendChartWrapper" class="h-[250px] min-w-[300px]">
                         <canvas id="trendLineChart"></canvas>
@@ -213,6 +219,7 @@
 
     </div>
 
+    <!-- Bottom Navigation -->
     <div id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-6 flex justify-around items-center rounded-t-[2rem] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] hidden z-40">
         <button onclick="switchTab('dashboard')" class="nav-item active flex flex-col items-center gap-1 w-1/3">
             <span class="text-2xl">🏠</span>
@@ -242,10 +249,14 @@
 
         // STATE
         const DEFAULT_CATS = ["🍔 Food", "🚗 Travel", "🛍️ Shopping", "Bills", "📦 Others"];
-        const INCOME_CATS = ["💰 Freelance", "🏆 Bonus", "💵 Refund", "🎁 Gift", "📈 Other"];
+        const DEFAULT_INC_CATS = ["💰 Freelance", "🏆 Bonus", "💵 Refund", "🎁 Gift", "📈 Other"];
         
         let savedCats = JSON.parse(localStorage.getItem('myCats'));
         let categories = (savedCats && savedCats.length > 0) ? savedCats : DEFAULT_CATS;
+
+        let savedIncCats = JSON.parse(localStorage.getItem('myIncCats'));
+        let incomeCategories = (savedIncCats && savedIncCats.length > 0) ? savedIncCats : DEFAULT_INC_CATS;
+        
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
         
         let allEntries = [], filteredEntries = [];
@@ -253,6 +264,7 @@
         let isSeeAll = false, globalFilteredSum = 0;
         let currentTab = 'dashboard';
         let currentEntryType = 'expense'; // 'expense' or 'income'
+        let trendViewType = 'month'; // 'month' or 'year'
         let currentMonthExtraIncome = 0;
         let currentMonthEffectiveBudget = parseFloat(monthlySalary);
 
@@ -269,6 +281,7 @@
                     if (doc.exists) {
                         const data = doc.data();
                         if (data.categories) { categories = data.categories; localStorage.setItem('myCats', JSON.stringify(categories)); }
+                        if (data.incomeCategories) { incomeCategories = data.incomeCategories; localStorage.setItem('myIncCats', JSON.stringify(incomeCategories)); }
                         if (data.salary) { monthlySalary = data.salary; localStorage.setItem('mySalary', monthlySalary); }
                         setStatus("🟢 Synced");
                         updateDropdowns();
@@ -298,17 +311,14 @@
                 incBtn.className = "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
                 saveBtn.innerText = "Add Expense";
                 saveBtn.className = "w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all";
-                updateDropdowns(); // loads expense categories
             } else {
                 incBtn.className = "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-emerald-600 uppercase transition-all";
                 expBtn.className = "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
                 saveBtn.innerText = "Add Extra Income";
                 saveBtn.className = "w-full bg-emerald-500 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all";
-                
-                const select = document.getElementById('sector');
-                select.innerHTML = INCOME_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
                 subCat.classList.add('hidden');
             }
+            updateDropdowns();
         }
 
         // --- NAVIGATION ---
@@ -340,10 +350,21 @@
             }
         }
 
+        function setTrendType(type) {
+            trendViewType = type;
+            document.getElementById('trendMonthBtn').className = type === 'month' ? "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all" : "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
+            document.getElementById('trendYearBtn').className = type === 'year' ? "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all" : "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
+            document.getElementById('trendChartTitle').innerText = type === 'month' ? "Month-over-Month Timeline" : "Year-over-Year Timeline";
+            renderTrends();
+        }
+
         function renderFilterChips() {
             const container = document.getElementById('filterChips');
             let html = `<button onclick="applyFilter('')" class="chip px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-bold uppercase shadow-md">ALL</button>`;
-            categories.forEach(c => {
+            
+            // Show chips based on current mode to keep it clean
+            const activeList = currentEntryType === 'expense' ? categories : incomeCategories;
+            activeList.forEach(c => {
                 html += `<button onclick="applyFilter('${c.split(' ')[1] || c}')" class="chip px-4 py-2 bg-white text-slate-600 border border-gray-200 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap">${c}</button>`;
             });
             container.innerHTML = html;
@@ -360,24 +381,26 @@
 
         function saveSettings() {
             localStorage.setItem('myCats', JSON.stringify(categories));
+            localStorage.setItem('myIncCats', JSON.stringify(incomeCategories));
             localStorage.setItem('mySalary', monthlySalary);
             updateDropdowns();
             if (auth.currentUser) {
                 setStatus("saving...");
-                db.collection('user_settings').doc(auth.currentUser.uid).set({ categories, salary: monthlySalary }, { merge: true })
+                db.collection('user_settings').doc(auth.currentUser.uid).set({ categories, incomeCategories, salary: monthlySalary }, { merge: true })
                     .then(() => setStatus("🟢 Synced"))
                     .catch(() => setStatus("🟠 Local Only"));
             }
         }
 
         function updateDropdowns() {
-            if (currentEntryType === 'expense') {
-                const select = document.getElementById('sector');
-                const current = select.value;
-                select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-                if (categories.includes(current)) select.value = current;
-                else if(categories.length > 0) select.value = categories[0];
-            }
+            const select = document.getElementById('sector');
+            const current = select.value;
+            const activeList = currentEntryType === 'expense' ? categories : incomeCategories;
+
+            select.innerHTML = activeList.map(c => `<option value="${c}">${c}</option>`).join('');
+            if (activeList.includes(current)) select.value = current;
+            else if(activeList.length > 0) select.value = activeList[0];
+
             renderFilterChips(); 
             if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
         }
@@ -394,7 +417,6 @@
             const sDate = document.getElementById('startDate').value, eDate = document.getElementById('endDate').value;
             const terms = document.getElementById('searchInput').value.toLowerCase().split(' ').filter(t => t);
 
-            // Separate Incomes and Expenses for calculations
             allEntries.forEach(ex => {
                 const exD = new Date(ex.date);
                 const isThisMonth = exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear();
@@ -417,11 +439,9 @@
                 return matchDate && matchSearch;
             });
 
-            // Calculate "Calculated Spend" purely on Expenses
             const filteredExpensesOnly = filteredEntries.filter(e => e.type !== 'income');
             document.getElementById('monthlyTotal').innerText = `₹${filteredExpensesOnly.reduce((a,b)=>a+b.amount,0).toLocaleString('en-IN')}`;
             
-            // Budget UI Updates
             document.getElementById('dailyLimit').innerText = `₹${Math.max((currentMonthEffectiveBudget - mSum)/daysLeft, 0).toFixed(0)}`;
             document.getElementById('salaryDisplay').innerText = `₹${currentMonthEffectiveBudget.toLocaleString('en-IN')}`;
             
@@ -435,7 +455,6 @@
 
             document.getElementById('progressBar').style.width = Math.min((mSum/currentMonthEffectiveBudget)*100, 100) + "%";
 
-            // History List (Mix of Incomes and Expenses)
             document.getElementById('history').innerHTML = filteredEntries.slice(0, isSeeAll ? filteredEntries.length : 10).map(ex => {
                 const isInc = ex.type === 'income';
                 const sign = isInc ? '+' : '';
@@ -454,50 +473,91 @@
             if (currentTab === 'trends') renderTrends();
         }
 
+        // --- INSIGHTS HTML HELPER ---
+        function createCompCardHTML(title, thisVal, lastVal, isIncome) {
+            const diff = thisVal - lastVal;
+            const diffPerc = lastVal > 0 ? ((Math.abs(diff) / lastVal) * 100).toFixed(0) : 100;
+            let icon = "", colorClass = "", diffText = "";
+
+            if (diff > 0) {
+                const isGood = isIncome;
+                icon = "📈";
+                colorClass = isGood ? "text-emerald-500 bg-emerald-100" : "text-red-500 bg-red-100";
+                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">+₹${diff.toLocaleString('en-IN')} (${diffPerc}%)</span>`;
+            } else if (diff < 0) {
+                const isGood = !isIncome;
+                icon = "📉";
+                colorClass = isGood ? "text-emerald-500 bg-emerald-100" : "text-red-500 bg-red-100";
+                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">-₹${Math.abs(diff).toLocaleString('en-IN')} (${diffPerc}%)</span>`;
+            } else {
+                icon = "➖";
+                colorClass = "text-slate-500 bg-slate-100";
+                diffText = `<span class="text-slate-500 font-black text-sm">No Change</span>`;
+            }
+
+            return `
+                <div class="min-w-[260px] max-w-[280px] bg-white p-5 rounded-[2rem] shadow-sm border snap-center flex-shrink-0">
+                    <p class="text-[10px] font-black uppercase text-gray-400 mb-4">${title}</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <div><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Current</p><p class="text-xl font-black text-slate-800">₹${thisVal.toLocaleString('en-IN')}</p></div>
+                        <div class="text-right"><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Previous</p><p class="text-lg font-black text-slate-400">₹${lastVal.toLocaleString('en-IN')}</p></div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-2xl flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm ${colorClass}">${icon}</div>
+                        <div>${diffText}<p class="text-[9px] text-gray-400 font-bold uppercase mt-[2px]">Vs Previous</p></div>
+                    </div>
+                </div>
+            `;
+        }
+
         // --- INSIGHTS RENDER ---
         function renderInsights() {
             const now = new Date();
-            let thisMonthSum = 0, lastMonthSum = 0;
+            let thisMonthExp = 0, lastMonthExp = 0;
+            let thisYearExp = 0, lastYearExp = 0;
+            let thisMonthInc = 0, lastMonthInc = 0;
+            let thisYearInc = 0, lastYearInc = 0;
             let activeCatData = {};
 
-            // ONLY PROCESS EXPENSES FOR ANALYTICS
-            const expensesOnly = allEntries.filter(e => e.type !== 'income');
+            const expensesOnly = [];
 
-            expensesOnly.forEach(ex => {
+            allEntries.forEach(ex => {
                 const exD = new Date(ex.date);
-                if (exD.getMonth() === now.getMonth() && exD.getFullYear() === now.getFullYear()) {
-                    thisMonthSum += ex.amount;
-                    activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + ex.amount;
+                const y = exD.getFullYear();
+                const m = exD.getMonth();
+                const amt = ex.amount;
+                const isInc = ex.type === 'income';
+
+                if (!isInc) expensesOnly.push(ex);
+
+                // Month logic
+                if (y === now.getFullYear() && m === now.getMonth()) {
+                    if (isInc) thisMonthInc += amt; else thisMonthExp += amt;
+                    if (!isInc) activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + amt;
                 }
-                if (exD.getMonth() === (now.getMonth() - 1 + 12) % 12 && 
-                   (now.getMonth() === 0 ? exD.getFullYear() === now.getFullYear() - 1 : exD.getFullYear() === now.getFullYear())) {
-                    lastMonthSum += ex.amount;
+                if (m === (now.getMonth() - 1 + 12) % 12 && (now.getMonth() === 0 ? y === now.getFullYear() - 1 : y === now.getFullYear())) {
+                    if (isInc) lastMonthInc += amt; else lastMonthExp += amt;
+                }
+
+                // Year logic
+                if (y === now.getFullYear()) {
+                    if (isInc) thisYearInc += amt; else thisYearExp += amt;
+                }
+                if (y === now.getFullYear() - 1) {
+                    if (isInc) lastYearInc += amt; else lastYearExp += amt;
                 }
             });
 
-            document.getElementById('compThisMonth').innerText = `₹${thisMonthSum.toLocaleString('en-IN')}`;
-            document.getElementById('compLastMonth').innerText = `₹${lastMonthSum.toLocaleString('en-IN')}`;
-            
-            const diff = thisMonthSum - lastMonthSum;
-            const diffPerc = lastMonthSum > 0 ? ((diff / lastMonthSum) * 100).toFixed(0) : 100;
-            
-            const iconEl = document.getElementById('compIcon');
-            const diffEl = document.getElementById('compDiff');
-            
-            if (diff > 0) {
-                iconEl.className = "w-10 h-10 rounded-full flex items-center justify-center text-xl bg-red-100 text-red-500";
-                iconEl.innerText = "📈";
-                diffEl.innerText = `+₹${diff} (${diffPerc}%)`;
-                diffEl.className = "font-black text-sm text-red-500";
-            } else {
-                iconEl.className = "w-10 h-10 rounded-full flex items-center justify-center text-xl bg-emerald-100 text-emerald-500";
-                iconEl.innerText = "📉";
-                diffEl.innerText = `-₹${Math.abs(diff)} (${Math.abs(diffPerc)}%)`;
-                diffEl.className = "font-black text-sm text-emerald-500";
-            }
+            // Render Swipeable Cards
+            const compContainer = document.getElementById('comparisonContainer');
+            compContainer.innerHTML = 
+                createCompCardHTML("Monthly Expenses", thisMonthExp, lastMonthExp, false) +
+                createCompCardHTML("Yearly Expenses", thisYearExp, lastYearExp, false) +
+                createCompCardHTML("Monthly Income", thisMonthInc, lastMonthInc, true) +
+                createCompCardHTML("Yearly Income", thisYearInc, lastYearInc, true);
 
+            // Alerts
             let alertsHtml = '';
-            // Alert uses EFFECTIVE budget
             Object.keys(activeCatData).forEach(cat => {
                 const amount = activeCatData[cat];
                 if ((amount / currentMonthEffectiveBudget) * 100 >= 30) {
@@ -611,50 +671,66 @@
             });
         }
 
-        // --- TRENDS RENDER (EXPENSES ONLY) ---
+        // --- TRENDS RENDER (Dynamic MoM or YoY) ---
         function renderTrends() {
-            const monthlyData = {};
+            const timeData = {};
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             const expensesOnly = allEntries.filter(e => e.type !== 'income');
 
             expensesOnly.forEach(ex => {
                 const date = new Date(ex.date);
-                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                monthlyData[key] = (monthlyData[key] || 0) + ex.amount;
+                // Group by YYYY-MM or just YYYY based on toggle
+                let key = '';
+                if (trendViewType === 'month') {
+                    key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                } else {
+                    key = `${date.getFullYear()}`;
+                }
+                timeData[key] = (timeData[key] || 0) + ex.amount;
             });
 
-            const sortedMonths = Object.keys(monthlyData).sort();
+            const sortedKeys = Object.keys(timeData).sort();
             const labels = [];
             const dataPoints = [];
             let historyHtml = '';
 
-            for (let i = 0; i < sortedMonths.length; i++) {
-                const key = sortedMonths[i];
-                const [year, monthStr] = key.split('-');
-                labels.push(`${monthNames[parseInt(monthStr)-1]} '${year.substring(2)}`);
-                dataPoints.push(monthlyData[key]);
+            for (let i = 0; i < sortedKeys.length; i++) {
+                const key = sortedKeys[i];
+                if (trendViewType === 'month') {
+                    const [year, monthStr] = key.split('-');
+                    labels.push(`${monthNames[parseInt(monthStr)-1]} '${year.substring(2)}`);
+                } else {
+                    labels.push(key);
+                }
+                dataPoints.push(timeData[key]);
             }
 
-            for (let i = sortedMonths.length - 1; i >= 0; i--) {
-                const key = sortedMonths[i];
-                const [year, monthStr] = key.split('-');
-                const monthName = `${monthNames[parseInt(monthStr)-1]} ${year}`;
-                const amount = monthlyData[key];
+            for (let i = sortedKeys.length - 1; i >= 0; i--) {
+                const key = sortedKeys[i];
+                let displayName = '';
+                if (trendViewType === 'month') {
+                    const [year, monthStr] = key.split('-');
+                    displayName = `${monthNames[parseInt(monthStr)-1]} ${year}`;
+                } else {
+                    displayName = `Year ${key}`;
+                }
+
+                const amount = timeData[key];
                 
                 let diffHtml = '';
                 if (i > 0) {
-                    const prevAmount = monthlyData[sortedMonths[i - 1]];
+                    const prevAmount = timeData[sortedKeys[i - 1]];
                     const diff = amount - prevAmount;
                     const diffPerc = prevAmount > 0 ? ((diff / prevAmount) * 100).toFixed(1) : 0;
-                    if (diff > 0) diffHtml = `<span class="text-[10px] font-bold text-red-500">↑ ${diffPerc}% (₹${diff})</span>`;
-                    else diffHtml = `<span class="text-[10px] font-bold text-emerald-500">↓ ${Math.abs(diffPerc)}% (₹${Math.abs(diff)})</span>`;
+                    if (diff > 0) diffHtml = `<span class="text-[10px] font-bold text-red-500">↑ ${diffPerc}% (₹${diff.toLocaleString('en-IN')})</span>`;
+                    else diffHtml = `<span class="text-[10px] font-bold text-emerald-500">↓ ${Math.abs(diffPerc)}% (₹${Math.abs(diff).toLocaleString('en-IN')})</span>`;
                 } else {
-                    diffHtml = `<span class="text-[10px] font-bold text-gray-400">Starting Month</span>`;
+                    diffHtml = `<span class="text-[10px] font-bold text-gray-400">Starting Period</span>`;
                 }
 
                 historyHtml += `
                     <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
-                        <div><p class="font-bold text-sm text-slate-700">${monthName}</p>${diffHtml}</div>
+                        <div><p class="font-bold text-sm text-slate-700">${displayName}</p>${diffHtml}</div>
                         <p class="font-black text-slate-800">₹${amount.toLocaleString('en-IN')}</p>
                     </div>`;
             }
@@ -722,12 +798,19 @@
                 sector: finalSector, 
                 method: document.getElementById('method').value, 
                 date, 
-                type: currentEntryType, // Saves as 'expense' or 'income'
+                type: currentEntryType, 
                 uid: auth.currentUser.uid 
             });
             document.getElementById('amount').value = "";
         }
-        function handleAddCategory() { const n = prompt("New Category:"); if(n) { categories.push(n); saveSettings(); } }
+        function handleAddCategory() { 
+            const n = prompt(`New ${currentEntryType === 'expense' ? 'Expense' : 'Income'} Category Name:`); 
+            if(n) { 
+                if (currentEntryType === 'expense') categories.push(n); 
+                else incomeCategories.push(n);
+                saveSettings(); 
+            } 
+        }
         function handleSetSalary() { const s = prompt("Base Salary:"); if(s) { monthlySalary = s; saveSettings(); handleRender(); } }
         function toggleSubCategory() { 
             if(currentEntryType === 'expense') {
@@ -736,17 +819,28 @@
         }
         async function deleteEntry(id) { if(confirm("Delete this entry?")) await db.collection("expenses").doc(id).delete(); }
         function toggleSeeAll() { isSeeAll = !isSeeAll; handleRender(); }
-        function openModal() { document.getElementById('manageModal').classList.add('active'); renderManageList(); }
+        function openModal() { 
+            document.getElementById('manageModalTitle').innerText = `Manage ${currentEntryType === 'expense' ? 'Expenses' : 'Income'}`;
+            document.getElementById('manageModal').classList.add('active'); 
+            renderManageList(); 
+        }
         function closeModal() { document.getElementById('manageModal').classList.remove('active'); }
         function renderManageList() {
             const q = document.getElementById('catSearch').value.toLowerCase();
-            document.getElementById('catList').innerHTML = categories.filter(c => c.toLowerCase().includes(q)).map(c => `
+            const activeList = currentEntryType === 'expense' ? categories : incomeCategories;
+            document.getElementById('catList').innerHTML = activeList.filter(c => c.toLowerCase().includes(q)).map(c => `
                 <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
                     <span class="font-bold text-sm">${c}</span>
                     <button onclick="removeCat('${c}')" class="text-red-500 font-bold text-xs uppercase">Delete</button>
                 </div>`).join('');
         }
-        function removeCat(c) { if(confirm("Delete?")) { categories = categories.filter(i => i !== c); saveSettings(); } }
+        function removeCat(c) { 
+            if(confirm("Delete?")) { 
+                if (currentEntryType === 'expense') categories = categories.filter(i => i !== c); 
+                else incomeCategories = incomeCategories.filter(i => i !== c);
+                saveSettings(); 
+            } 
+        }
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
         function exportExcel() {
             const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
