@@ -66,7 +66,22 @@
                 <p class="text-xs font-bold text-gray-400 uppercase">Hi, <span id="userName" class="text-blue-600">User</span></p>
                 <p id="syncStatus" class="text-[9px] font-bold text-gray-400">Initializing...</p>
             </div>
-            <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase">Logout</button>
+            <div class="flex items-center gap-2">
+                <!-- Currency Selector -->
+                <select id="currencySelect" onchange="handleCurrencyChange()" class="bg-white border border-gray-200 text-[11px] font-bold text-slate-700 px-2.5 py-1.5 rounded-xl outline-none shadow-sm cursor-pointer">
+                    <option value="₹">₹ INR</option>
+                    <option value="$">$ USD</option>
+                    <option value="€">€ EUR</option>
+                    <option value="£">£ GBP</option>
+                    <option value="¥">¥ JPY</option>
+                    <option value="AED ">AED</option>
+                    <option value="C$">C$ CAD</option>
+                    <option value="A$">A$ AUD</option>
+                    <option value="CHF ">CHF</option>
+                    <option value="S$">S$ SGD</option>
+                </select>
+                <button onclick="handleLogout()" class="text-[10px] font-bold text-gray-400 uppercase ml-1">Logout</button>
+            </div>
         </div>
 
         <!-- VIEW 1: DASHBOARD (HOME) -->
@@ -107,7 +122,7 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                    <input id="amount" type="number" placeholder="₹ Amount" class="p-4 rounded-2xl bg-gray-50 outline-none text-lg font-bold">
+                    <input id="amount" type="number" placeholder="Amount" class="p-4 rounded-2xl bg-gray-50 outline-none text-lg font-bold">
                     <select id="sector" onchange="toggleSubCategory()" class="p-4 rounded-2xl bg-gray-50 text-sm font-bold outline-none"></select>
                 </div>
                 <div id="subCategoryContainer" class="hidden mb-4">
@@ -122,7 +137,7 @@
                 </div>
                 <div class="flex gap-3 mb-6">
                     <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
-                        <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option>
+                        <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option><option>Bank Transfer</option>
                     </select>
                     <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
                 </div>
@@ -240,7 +255,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore(), auth = firebase.auth();
 
-        // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW failed', err));
@@ -258,13 +272,14 @@
         let incomeCategories = (savedIncCats && savedIncCats.length > 0) ? savedIncCats : DEFAULT_INC_CATS;
         
         let monthlySalary = localStorage.getItem('mySalary') || 32000;
+        let currentCurrency = localStorage.getItem('myCurrency') || '₹';
         
         let allEntries = [], filteredEntries = [];
         let categoryChart = null, trendChart = null, customChart = null;
         let isSeeAll = false, globalFilteredSum = 0;
         let currentTab = 'dashboard';
-        let currentEntryType = 'expense'; // 'expense' or 'income'
-        let trendViewType = 'month'; // 'month' or 'year'
+        let currentEntryType = 'expense';
+        let trendViewType = 'month';
         let currentMonthExtraIncome = 0;
         let currentMonthEffectiveBudget = parseFloat(monthlySalary);
 
@@ -275,6 +290,7 @@
                 document.getElementById('bottomNav').classList.remove('hidden');
                 document.getElementById('userName').innerText = user.displayName;
                 
+                document.getElementById('currencySelect').value = currentCurrency;
                 updateDropdowns();
 
                 db.collection('user_settings').doc(user.uid).onSnapshot(doc => {
@@ -283,6 +299,11 @@
                         if (data.categories) { categories = data.categories; localStorage.setItem('myCats', JSON.stringify(categories)); }
                         if (data.incomeCategories) { incomeCategories = data.incomeCategories; localStorage.setItem('myIncCats', JSON.stringify(incomeCategories)); }
                         if (data.salary) { monthlySalary = data.salary; localStorage.setItem('mySalary', monthlySalary); }
+                        if (data.currency) { 
+                            currentCurrency = data.currency; 
+                            localStorage.setItem('myCurrency', currentCurrency);
+                            document.getElementById('currencySelect').value = currentCurrency;
+                        }
                         setStatus("🟢 Synced");
                         updateDropdowns();
                         handleRender();
@@ -297,6 +318,12 @@
                 document.getElementById('loginPage').classList.remove('hidden'); 
             }
         });
+
+        function handleCurrencyChange() {
+            currentCurrency = document.getElementById('currencySelect').value;
+            saveSettings();
+            handleRender();
+        }
 
         // --- FORM TOGGLE LOGIC ---
         function setEntryType(type) {
@@ -362,7 +389,6 @@
             const container = document.getElementById('filterChips');
             let html = `<button onclick="applyFilter('')" class="chip px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-bold uppercase shadow-md">ALL</button>`;
             
-            // Show chips based on current mode to keep it clean
             const activeList = currentEntryType === 'expense' ? categories : incomeCategories;
             activeList.forEach(c => {
                 html += `<button onclick="applyFilter('${c.split(' ')[1] || c}')" class="chip px-4 py-2 bg-white text-slate-600 border border-gray-200 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap">${c}</button>`;
@@ -383,10 +409,11 @@
             localStorage.setItem('myCats', JSON.stringify(categories));
             localStorage.setItem('myIncCats', JSON.stringify(incomeCategories));
             localStorage.setItem('mySalary', monthlySalary);
+            localStorage.setItem('myCurrency', currentCurrency);
             updateDropdowns();
             if (auth.currentUser) {
                 setStatus("saving...");
-                db.collection('user_settings').doc(auth.currentUser.uid).set({ categories, incomeCategories, salary: monthlySalary }, { merge: true })
+                db.collection('user_settings').doc(auth.currentUser.uid).set({ categories, incomeCategories, salary: monthlySalary, currency: currentCurrency }, { merge: true })
                     .then(() => setStatus("🟢 Synced"))
                     .catch(() => setStatus("🟠 Local Only"));
             }
@@ -400,6 +427,8 @@
             select.innerHTML = activeList.map(c => `<option value="${c}">${c}</option>`).join('');
             if (activeList.includes(current)) select.value = current;
             else if(activeList.length > 0) select.value = activeList[0];
+
+            document.getElementById('amount').placeholder = `${currentCurrency} Amount`;
 
             renderFilterChips(); 
             if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
@@ -440,14 +469,14 @@
             });
 
             const filteredExpensesOnly = filteredEntries.filter(e => e.type !== 'income');
-            document.getElementById('monthlyTotal').innerText = `₹${filteredExpensesOnly.reduce((a,b)=>a+b.amount,0).toLocaleString('en-IN')}`;
+            document.getElementById('monthlyTotal').innerText = `${currentCurrency}${filteredExpensesOnly.reduce((a,b)=>a+b.amount,0).toLocaleString()}`;
             
-            document.getElementById('dailyLimit').innerText = `₹${Math.max((currentMonthEffectiveBudget - mSum)/daysLeft, 0).toFixed(0)}`;
-            document.getElementById('salaryDisplay').innerText = `₹${currentMonthEffectiveBudget.toLocaleString('en-IN')}`;
+            document.getElementById('dailyLimit').innerText = `${currentCurrency}${Math.max((currentMonthEffectiveBudget - mSum)/daysLeft, 0).toFixed(0)}`;
+            document.getElementById('salaryDisplay').innerText = `${currentCurrency}${currentMonthEffectiveBudget.toLocaleString()}`;
             
             const extraUI = document.getElementById('extraIncomeDisplay');
             if (currentMonthExtraIncome > 0) {
-                extraUI.innerText = `+₹${currentMonthExtraIncome.toLocaleString('en-IN')} Extra`;
+                extraUI.innerText = `+${currentCurrency}${currentMonthExtraIncome.toLocaleString()} Extra`;
                 extraUI.classList.remove('hidden');
             } else {
                 extraUI.classList.add('hidden');
@@ -462,7 +491,7 @@
                 return `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
                     <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
-                    <div class="flex items-center gap-4"><p class="font-black ${color}">${sign}₹${ex.amount}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
+                    <div class="flex items-center gap-4"><p class="font-black ${color}">${sign}${currentCurrency}${ex.amount.toLocaleString()}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
                 </div>`
             }).join('');
             
@@ -483,12 +512,12 @@
                 const isGood = isIncome;
                 icon = "📈";
                 colorClass = isGood ? "text-emerald-500 bg-emerald-100" : "text-red-500 bg-red-100";
-                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">+₹${diff.toLocaleString('en-IN')} (${diffPerc}%)</span>`;
+                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">+${currentCurrency}${diff.toLocaleString()} (${diffPerc}%)</span>`;
             } else if (diff < 0) {
                 const isGood = !isIncome;
                 icon = "📉";
                 colorClass = isGood ? "text-emerald-500 bg-emerald-100" : "text-red-500 bg-red-100";
-                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">-₹${Math.abs(diff).toLocaleString('en-IN')} (${diffPerc}%)</span>`;
+                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">-${currentCurrency}${Math.abs(diff).toLocaleString()} (${diffPerc}%)</span>`;
             } else {
                 icon = "➖";
                 colorClass = "text-slate-500 bg-slate-100";
@@ -499,8 +528,8 @@
                 <div class="min-w-[260px] max-w-[280px] bg-white p-5 rounded-[2rem] shadow-sm border snap-center flex-shrink-0">
                     <p class="text-[10px] font-black uppercase text-gray-400 mb-4">${title}</p>
                     <div class="flex items-center justify-between mb-4">
-                        <div><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Current</p><p class="text-xl font-black text-slate-800">₹${thisVal.toLocaleString('en-IN')}</p></div>
-                        <div class="text-right"><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Previous</p><p class="text-lg font-black text-slate-400">₹${lastVal.toLocaleString('en-IN')}</p></div>
+                        <div><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Current</p><p class="text-xl font-black text-slate-800">${currentCurrency}${thisVal.toLocaleString()}</p></div>
+                        <div class="text-right"><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Previous</p><p class="text-lg font-black text-slate-400">${currentCurrency}${lastVal.toLocaleString()}</p></div>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-2xl flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm ${colorClass}">${icon}</div>
@@ -530,7 +559,6 @@
 
                 if (!isInc) expensesOnly.push(ex);
 
-                // Month logic
                 if (y === now.getFullYear() && m === now.getMonth()) {
                     if (isInc) thisMonthInc += amt; else thisMonthExp += amt;
                     if (!isInc) activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + amt;
@@ -539,7 +567,6 @@
                     if (isInc) lastMonthInc += amt; else lastMonthExp += amt;
                 }
 
-                // Year logic
                 if (y === now.getFullYear()) {
                     if (isInc) thisYearInc += amt; else thisYearExp += amt;
                 }
@@ -548,7 +575,6 @@
                 }
             });
 
-            // Render Swipeable Cards
             const compContainer = document.getElementById('comparisonContainer');
             compContainer.innerHTML = 
                 createCompCardHTML("Monthly Expenses", thisMonthExp, lastMonthExp, false) +
@@ -556,20 +582,18 @@
                 createCompCardHTML("Monthly Income", thisMonthInc, lastMonthInc, true) +
                 createCompCardHTML("Yearly Income", thisYearInc, lastYearInc, true);
 
-            // Alerts
             let alertsHtml = '';
             Object.keys(activeCatData).forEach(cat => {
                 const amount = activeCatData[cat];
                 if ((amount / currentMonthEffectiveBudget) * 100 >= 30) {
-                    alertsHtml += `<div class="bg-white p-3 rounded-xl flex justify-between items-center"><span class="font-bold text-xs text-slate-700">${cat}</span><span class="font-black text-xs text-red-500">₹${amount}</span></div>`;
+                    alertsHtml += `<div class="bg-white p-3 rounded-xl flex justify-between items-center"><span class="font-bold text-xs text-slate-700">${cat}</span><span class="font-black text-xs text-red-500">${currentCurrency}${amount.toLocaleString()}</span></div>`;
                 }
             });
             document.getElementById('alertSection').classList.toggle('hidden', !alertsHtml);
             document.getElementById('alertList').innerHTML = alertsHtml;
 
-            updateChart(activeCatData, 'categoryBarChart', chartWrapper);
+            updateChart(activeCatData);
 
-            // CUSTOM DATE RANGE DATA (Expenses only)
             const sDate = document.getElementById('startDate').value;
             const eDate = document.getElementById('endDate').value;
             
@@ -608,7 +632,7 @@
                 data: { labels, datasets: [{ data: dataPoints, backgroundColor: backgroundColors, borderRadius: 8, barThickness: 30 }] }, 
                 options: { 
                     indexAxis: 'x', responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ₹${c.raw.toLocaleString('en-IN')}`, ` Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
+                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${c.raw.toLocaleString()}`, ` Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false } },
                     animation: {
                         onComplete: function() {
@@ -649,7 +673,7 @@
                 data: { labels, datasets: [{ data: dataPoints, backgroundColor: backgroundColors, borderRadius: 8, barThickness: 30 }] }, 
                 options: { 
                     indexAxis: 'x', responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ₹${c.raw.toLocaleString('en-IN')}`, ` Range Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
+                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${c.raw.toLocaleString()}`, ` Range Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false } },
                     animation: {
                         onComplete: function() {
@@ -679,7 +703,6 @@
 
             expensesOnly.forEach(ex => {
                 const date = new Date(ex.date);
-                // Group by YYYY-MM or just YYYY based on toggle
                 let key = '';
                 if (trendViewType === 'month') {
                     key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -722,8 +745,8 @@
                     const prevAmount = timeData[sortedKeys[i - 1]];
                     const diff = amount - prevAmount;
                     const diffPerc = prevAmount > 0 ? ((diff / prevAmount) * 100).toFixed(1) : 0;
-                    if (diff > 0) diffHtml = `<span class="text-[10px] font-bold text-red-500">↑ ${diffPerc}% (₹${diff.toLocaleString('en-IN')})</span>`;
-                    else diffHtml = `<span class="text-[10px] font-bold text-emerald-500">↓ ${Math.abs(diffPerc)}% (₹${Math.abs(diff).toLocaleString('en-IN')})</span>`;
+                    if (diff > 0) diffHtml = `<span class="text-[10px] font-bold text-red-500">↑ ${diffPerc}% (${currentCurrency}${diff.toLocaleString()})</span>`;
+                    else diffHtml = `<span class="text-[10px] font-bold text-emerald-500">↓ ${Math.abs(diffPerc)}% (${currentCurrency}${Math.abs(diff).toLocaleString()})</span>`;
                 } else {
                     diffHtml = `<span class="text-[10px] font-bold text-gray-400">Starting Period</span>`;
                 }
@@ -731,7 +754,7 @@
                 historyHtml += `
                     <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
                         <div><p class="font-bold text-sm text-slate-700">${displayName}</p>${diffHtml}</div>
-                        <p class="font-black text-slate-800">₹${amount.toLocaleString('en-IN')}</p>
+                        <p class="font-black text-slate-800">${currentCurrency}${amount.toLocaleString()}</p>
                     </div>`;
             }
             document.getElementById('monthlyHistoryList').innerHTML = historyHtml || '<p class="text-xs text-gray-400">No data available yet.</p>';
@@ -762,7 +785,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ₹${c.raw.toLocaleString('en-IN')}` } } },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${currentCurrency}${c.raw.toLocaleString()}` } } },
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false, beginAtZero: true } },
                     animation: {
                         onComplete: function() {
@@ -774,7 +797,7 @@
                                 const meta = this.getDatasetMeta(i);
                                 meta.data.forEach((point, index) => {
                                     const val = ds.data[index];
-                                    if(val > 0) ctx.fillText(`₹${(val/1000).toFixed(1)}k`, point.x, point.y - 10);
+                                    if(val > 0) ctx.fillText(`${currentCurrency}${(val/1000).toFixed(1)}k`, point.x, point.y - 10);
                                 });
                             });
                         }
@@ -843,7 +866,7 @@
         }
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
         function exportExcel() {
-            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
+            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: `${currentCurrency}${ex.amount}` })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
         function exportPDF() {
@@ -852,8 +875,8 @@
             doc.setFontSize(10); doc.setTextColor(100); doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
             doc.setDrawColor(200); doc.line(14, 32, 196, 32);
             doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
-            doc.setFontSize(10); doc.text(`Effective Budget (Salary + Extra): Rs. ${currentMonthEffectiveBudget}`, 14, 50);
-            const rows = allEntries.map(ex => [ex.date, ex.type==='income'?'Income':'Expense', sanitize(ex.sector), ex.method, `Rs. ${ex.amount}`]);
+            doc.setFontSize(10); doc.text(`Effective Budget (Salary + Extra): ${currentCurrency}${currentMonthEffectiveBudget.toLocaleString()}`, 14, 50);
+            const rows = allEntries.map(ex => [ex.date, ex.type==='income'?'Income':'Expense', sanitize(ex.sector), ex.method, `${currentCurrency}${ex.amount.toLocaleString()}`]);
             doc.autoTable({ head: [['Date', 'Type', 'Category', 'Method', 'Amount']], body: rows, startY: 60, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
             doc.save("SpendGuard_Branded_Report.pdf");
         }
