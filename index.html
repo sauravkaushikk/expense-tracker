@@ -91,16 +91,16 @@
                     <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Calculated Spend</p>
                     <button onclick="handleSetSalary()" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold uppercase">Set Base Salary</button>
                 </div>
-                <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">₹0.00</h2>
+                <h2 id="monthlyTotal" class="text-5xl font-black mb-4 tracking-tight">0.00</h2>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div class="bg-slate-800/50 p-3 rounded-2xl">
                         <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Daily Safe</p>
-                        <p id="dailyLimit" class="text-lg font-bold text-emerald-400">₹0</p>
+                        <p id="dailyLimit" class="text-lg font-bold text-emerald-400">0</p>
                     </div>
                     <div class="bg-slate-800/50 p-3 rounded-2xl text-right">
                         <p class="text-[9px] uppercase font-bold text-slate-500 mb-1">Total Budget</p>
-                        <p id="salaryDisplay" class="text-lg font-bold text-slate-100">₹0</p>
-                        <p id="extraIncomeDisplay" class="text-[9px] font-bold text-emerald-400 mt-[-2px] hidden">+₹0 Extra</p>
+                        <p id="salaryDisplay" class="text-lg font-bold text-slate-100">0</p>
+                        <p id="extraIncomeDisplay" class="text-[9px] font-bold text-emerald-400 mt-[-2px] hidden">+0 Extra</p>
                     </div>
                 </div>
                 <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="progressBar" class="h-full bg-blue-500 transition-all duration-700" style="width: 0%"></div></div>
@@ -282,6 +282,19 @@
         let trendViewType = 'month';
         let currentMonthExtraIncome = 0;
         let currentMonthEffectiveBudget = parseFloat(monthlySalary);
+
+        // --- DYNAMIC FORMATTERS ---
+        function formatAmt(amt) {
+            // Use en-IN for Rupee (Lakhs/Crores), en-US for everything else (Millions/Billions)
+            if (currentCurrency === '₹') return new Intl.NumberFormat('en-IN').format(amt);
+            return new Intl.NumberFormat('en-US').format(amt);
+        }
+
+        function formatCompact(amt) {
+            // Uses smart abbreviation like '1.5M' or '1.5L' / '1.5Cr'
+            if (currentCurrency === '₹') return new Intl.NumberFormat('en-IN', { notation: "compact", maximumFractionDigits: 1 }).format(amt);
+            return new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(amt);
+        }
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -469,14 +482,14 @@
             });
 
             const filteredExpensesOnly = filteredEntries.filter(e => e.type !== 'income');
-            document.getElementById('monthlyTotal').innerText = `${currentCurrency}${filteredExpensesOnly.reduce((a,b)=>a+b.amount,0).toLocaleString()}`;
+            document.getElementById('monthlyTotal').innerText = `${currentCurrency}${formatAmt(filteredExpensesOnly.reduce((a,b)=>a+b.amount,0))}`;
             
-            document.getElementById('dailyLimit').innerText = `${currentCurrency}${Math.max((currentMonthEffectiveBudget - mSum)/daysLeft, 0).toFixed(0)}`;
-            document.getElementById('salaryDisplay').innerText = `${currentCurrency}${currentMonthEffectiveBudget.toLocaleString()}`;
+            document.getElementById('dailyLimit').innerText = `${currentCurrency}${formatAmt(Math.max((currentMonthEffectiveBudget - mSum)/daysLeft, 0).toFixed(0))}`;
+            document.getElementById('salaryDisplay').innerText = `${currentCurrency}${formatAmt(currentMonthEffectiveBudget)}`;
             
             const extraUI = document.getElementById('extraIncomeDisplay');
             if (currentMonthExtraIncome > 0) {
-                extraUI.innerText = `+${currentCurrency}${currentMonthExtraIncome.toLocaleString()} Extra`;
+                extraUI.innerText = `+${currentCurrency}${formatAmt(currentMonthExtraIncome)} Extra`;
                 extraUI.classList.remove('hidden');
             } else {
                 extraUI.classList.add('hidden');
@@ -491,7 +504,7 @@
                 return `
                 <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
                     <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
-                    <div class="flex items-center gap-4"><p class="font-black ${color}">${sign}${currentCurrency}${ex.amount.toLocaleString()}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
+                    <div class="flex items-center gap-4"><p class="font-black ${color}">${sign}${currentCurrency}${formatAmt(ex.amount)}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
                 </div>`
             }).join('');
             
@@ -512,12 +525,12 @@
                 const isGood = isIncome;
                 icon = "📈";
                 colorClass = isGood ? "text-emerald-500 bg-emerald-100" : "text-red-500 bg-red-100";
-                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">+${currentCurrency}${diff.toLocaleString()} (${diffPerc}%)</span>`;
+                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">+${currentCurrency}${formatAmt(diff)} (${diffPerc}%)</span>`;
             } else if (diff < 0) {
                 const isGood = !isIncome;
                 icon = "📉";
                 colorClass = isGood ? "text-emerald-500 bg-emerald-100" : "text-red-500 bg-red-100";
-                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">-${currentCurrency}${Math.abs(diff).toLocaleString()} (${diffPerc}%)</span>`;
+                diffText = `<span class="${isGood ? 'text-emerald-500' : 'text-red-500'} font-black text-sm">-${currentCurrency}${formatAmt(Math.abs(diff))} (${diffPerc}%)</span>`;
             } else {
                 icon = "➖";
                 colorClass = "text-slate-500 bg-slate-100";
@@ -528,8 +541,8 @@
                 <div class="min-w-[260px] max-w-[280px] bg-white p-5 rounded-[2rem] shadow-sm border snap-center flex-shrink-0">
                     <p class="text-[10px] font-black uppercase text-gray-400 mb-4">${title}</p>
                     <div class="flex items-center justify-between mb-4">
-                        <div><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Current</p><p class="text-xl font-black text-slate-800">${currentCurrency}${thisVal.toLocaleString()}</p></div>
-                        <div class="text-right"><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Previous</p><p class="text-lg font-black text-slate-400">${currentCurrency}${lastVal.toLocaleString()}</p></div>
+                        <div><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Current</p><p class="text-xl font-black text-slate-800">${currentCurrency}${formatAmt(thisVal)}</p></div>
+                        <div class="text-right"><p class="text-[9px] text-gray-400 font-bold mb-1 uppercase">Previous</p><p class="text-lg font-black text-slate-400">${currentCurrency}${formatAmt(lastVal)}</p></div>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-2xl flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm ${colorClass}">${icon}</div>
@@ -542,12 +555,9 @@
         // --- INSIGHTS RENDER ---
         function renderInsights() {
             const now = new Date();
-            let thisMonthExp = 0, lastMonthExp = 0;
-            let thisYearExp = 0, lastYearExp = 0;
-            let thisMonthInc = 0, lastMonthInc = 0;
-            let thisYearInc = 0, lastYearInc = 0;
+            let thisMonthExp = 0, lastMonthExp = 0, thisYearExp = 0, lastYearExp = 0;
+            let thisMonthInc = 0, lastMonthInc = 0, thisYearInc = 0, lastYearInc = 0;
             let activeCatData = {};
-
             const expensesOnly = [];
 
             allEntries.forEach(ex => {
@@ -575,8 +585,7 @@
                 }
             });
 
-            const compContainer = document.getElementById('comparisonContainer');
-            compContainer.innerHTML = 
+            document.getElementById('comparisonContainer').innerHTML = 
                 createCompCardHTML("Monthly Expenses", thisMonthExp, lastMonthExp, false) +
                 createCompCardHTML("Yearly Expenses", thisYearExp, lastYearExp, false) +
                 createCompCardHTML("Monthly Income", thisMonthInc, lastMonthInc, true) +
@@ -586,7 +595,7 @@
             Object.keys(activeCatData).forEach(cat => {
                 const amount = activeCatData[cat];
                 if ((amount / currentMonthEffectiveBudget) * 100 >= 30) {
-                    alertsHtml += `<div class="bg-white p-3 rounded-xl flex justify-between items-center"><span class="font-bold text-xs text-slate-700">${cat}</span><span class="font-black text-xs text-red-500">${currentCurrency}${amount.toLocaleString()}</span></div>`;
+                    alertsHtml += `<div class="bg-white p-3 rounded-xl flex justify-between items-center"><span class="font-bold text-xs text-slate-700">${cat}</span><span class="font-black text-xs text-red-500">${currentCurrency}${formatAmt(amount)}</span></div>`;
                 }
             });
             document.getElementById('alertSection').classList.toggle('hidden', !alertsHtml);
@@ -632,7 +641,7 @@
                 data: { labels, datasets: [{ data: dataPoints, backgroundColor: backgroundColors, borderRadius: 8, barThickness: 30 }] }, 
                 options: { 
                     indexAxis: 'x', responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${c.raw.toLocaleString()}`, ` Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
+                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${formatAmt(c.raw)}`, ` Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false } },
                     animation: {
                         onComplete: function() {
@@ -673,7 +682,7 @@
                 data: { labels, datasets: [{ data: dataPoints, backgroundColor: backgroundColors, borderRadius: 8, barThickness: 30 }] }, 
                 options: { 
                     indexAxis: 'x', responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${c.raw.toLocaleString()}`, ` Range Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
+                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${formatAmt(c.raw)}`, ` Range Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false } },
                     animation: {
                         onComplete: function() {
@@ -695,7 +704,7 @@
             });
         }
 
-        // --- TRENDS RENDER (Dynamic MoM or YoY) ---
+        // --- TRENDS RENDER ---
         function renderTrends() {
             const timeData = {};
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -745,8 +754,8 @@
                     const prevAmount = timeData[sortedKeys[i - 1]];
                     const diff = amount - prevAmount;
                     const diffPerc = prevAmount > 0 ? ((diff / prevAmount) * 100).toFixed(1) : 0;
-                    if (diff > 0) diffHtml = `<span class="text-[10px] font-bold text-red-500">↑ ${diffPerc}% (${currentCurrency}${diff.toLocaleString()})</span>`;
-                    else diffHtml = `<span class="text-[10px] font-bold text-emerald-500">↓ ${Math.abs(diffPerc)}% (${currentCurrency}${Math.abs(diff).toLocaleString()})</span>`;
+                    if (diff > 0) diffHtml = `<span class="text-[10px] font-bold text-red-500">↑ ${diffPerc}% (${currentCurrency}${formatAmt(diff)})</span>`;
+                    else diffHtml = `<span class="text-[10px] font-bold text-emerald-500">↓ ${Math.abs(diffPerc)}% (${currentCurrency}${formatAmt(Math.abs(diff))})</span>`;
                 } else {
                     diffHtml = `<span class="text-[10px] font-bold text-gray-400">Starting Period</span>`;
                 }
@@ -754,7 +763,7 @@
                 historyHtml += `
                     <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
                         <div><p class="font-bold text-sm text-slate-700">${displayName}</p>${diffHtml}</div>
-                        <p class="font-black text-slate-800">${currentCurrency}${amount.toLocaleString()}</p>
+                        <p class="font-black text-slate-800">${currentCurrency}${formatAmt(amount)}</p>
                     </div>`;
             }
             document.getElementById('monthlyHistoryList').innerHTML = historyHtml || '<p class="text-xs text-gray-400">No data available yet.</p>';
@@ -785,7 +794,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${currentCurrency}${c.raw.toLocaleString()}` } } },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${currentCurrency}${formatAmt(c.raw)}` } } },
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false, beginAtZero: true } },
                     animation: {
                         onComplete: function() {
@@ -797,7 +806,7 @@
                                 const meta = this.getDatasetMeta(i);
                                 meta.data.forEach((point, index) => {
                                     const val = ds.data[index];
-                                    if(val > 0) ctx.fillText(`${currentCurrency}${(val/1000).toFixed(1)}k`, point.x, point.y - 10);
+                                    if(val > 0) ctx.fillText(`${currentCurrency}${formatCompact(val)}`, point.x, point.y - 10);
                                 });
                             });
                         }
@@ -866,7 +875,8 @@
         }
         function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
         function exportExcel() {
-            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: `${currentCurrency}${ex.amount}` })));
+            // Excel is better served by raw numbers in the Amount column, but we'll include currency in a separate column or just let Excel format it
+            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
         function exportPDF() {
@@ -875,8 +885,8 @@
             doc.setFontSize(10); doc.setTextColor(100); doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
             doc.setDrawColor(200); doc.line(14, 32, 196, 32);
             doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
-            doc.setFontSize(10); doc.text(`Effective Budget (Salary + Extra): ${currentCurrency}${currentMonthEffectiveBudget.toLocaleString()}`, 14, 50);
-            const rows = allEntries.map(ex => [ex.date, ex.type==='income'?'Income':'Expense', sanitize(ex.sector), ex.method, `${currentCurrency}${ex.amount.toLocaleString()}`]);
+            doc.setFontSize(10); doc.text(`Effective Budget (Salary + Extra): ${currentCurrency}${formatAmt(currentMonthEffectiveBudget)}`, 14, 50);
+            const rows = allEntries.map(ex => [ex.date, ex.type==='income'?'Income':'Expense', sanitize(ex.sector), ex.method, `${currentCurrency}${formatAmt(ex.amount)}`]);
             doc.autoTable({ head: [['Date', 'Type', 'Category', 'Method', 'Amount']], body: rows, startY: 60, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
             doc.save("SpendGuard_Branded_Report.pdf");
         }
