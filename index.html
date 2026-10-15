@@ -45,6 +45,52 @@
         </div>
     </div>
 
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="modal z-50">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 px-1">
+                <h3 class="text-lg font-black">Edit Transaction</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 font-bold text-xl">✕</button>
+            </div>
+
+            <!-- Type Toggle in Edit Modal -->
+            <div class="flex gap-2 mb-4 bg-gray-50 p-1 rounded-2xl border">
+                <button id="editTypeExpBtn" onclick="setEditEntryType('expense')" class="w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all">📉 Expense</button>
+                <button id="editTypeIncBtn" onclick="setEditEntryType('income')" class="w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all">📈 Income</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <input id="editAmount" type="number" placeholder="Amount" class="p-3.5 rounded-2xl bg-gray-50 outline-none text-base font-bold">
+                <select id="editSector" onchange="toggleEditSubCategory()" class="p-3.5 rounded-2xl bg-gray-50 text-xs font-bold outline-none"></select>
+            </div>
+
+            <div id="editSubCategoryContainer" class="hidden mb-3">
+                <p class="text-[8px] font-bold text-gray-400 uppercase ml-2 mb-1">Select Bill Type</p>
+                <select id="editSubSector" class="w-full p-3.5 rounded-2xl bg-blue-50 text-blue-700 text-xs font-bold outline-none">
+                    <option value="💳 Credit Card">💳 Credit Card</option>
+                    <option value="📱 Mobile Recharge">📱 Mobile Recharge</option>
+                    <option value="🌐 Fiber Bill">🌐 Fiber Bill</option>
+                    <option value="⚡ Electricity">⚡ Electricity</option>
+                    <option value="🏠 Rent">🏠 Rent</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3 mb-3">
+                <select id="editMethod" class="w-1/2 p-3.5 rounded-2xl bg-gray-50 text-xs font-bold outline-none">
+                    <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option><option>Bank Transfer</option>
+                </select>
+                <input id="editDate" type="date" class="w-1/2 p-3.5 rounded-2xl bg-gray-50 text-xs font-bold outline-none">
+            </div>
+
+            <input id="editNote" type="text" maxlength="60" placeholder="📝 Short note (optional)" class="w-full p-3.5 rounded-2xl bg-gray-50 text-xs font-bold outline-none mb-5">
+
+            <div class="flex gap-2">
+                <button onclick="closeEditModal()" class="w-1/3 bg-gray-100 text-slate-600 p-4 rounded-2xl font-bold text-xs uppercase">Cancel</button>
+                <button onclick="handleUpdateEntry()" class="w-2/3 bg-blue-600 text-white p-4 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Login -->
     <div id="loginPage" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
         <div class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
@@ -135,19 +181,20 @@
                         <option value="🏠 Rent">🏠 Rent</option>
                     </select>
                 </div>
-                <div class="flex gap-3 mb-6">
-                    <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
+                <div class="flex gap-3 mb-4">
+                    <select id="method" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold outline-none">
                         <option>UPI</option><option>Cash</option><option>Credit Card</option><option>Debit Card</option><option>Bank Transfer</option>
                     </select>
-                    <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold">
+                    <input id="date" type="date" class="w-1/2 p-4 rounded-2xl bg-gray-50 text-sm font-bold outline-none">
                 </div>
+                <input id="note" type="text" maxlength="60" placeholder="📝 Short note (optional, e.g. Swiggy, Client)" class="w-full p-4 rounded-2xl bg-gray-50 text-xs font-bold outline-none mb-6">
                 <button id="saveBtn" onclick="handleSaveEntry()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Add Expense</button>
             </div>
 
             <!-- Filters & History -->
             <div class="bg-white p-6 rounded-[2rem] border mb-6">
                 <p class="text-[10px] font-black uppercase text-gray-400 mb-3 px-1">Search & Filter</p>
-                <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search entries..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-2 border-none outline-none">
+                <input id="searchInput" oninput="handleRender()" type="text" placeholder="🔍 Search category, note, or mode..." class="w-full p-4 rounded-xl bg-gray-50 text-sm mb-2 border-none outline-none">
                 <div id="filterChips" class="flex gap-2 overflow-x-auto pb-4 mb-2 custom-scroll"></div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1">
@@ -161,6 +208,10 @@
                 </div>
             </div>
 
+            <div class="flex justify-between items-center px-2 mb-2">
+                <p class="text-[9px] font-bold text-gray-400 uppercase">Recent Transactions</p>
+                <p class="text-[9px] font-bold text-blue-500 uppercase">Tap any item to edit</p>
+            </div>
             <div id="history" class="space-y-3"></div>
             <button id="seeAllBtn" onclick="toggleSeeAll()" class="w-full p-4 bg-gray-100 text-gray-400 rounded-2xl text-[9px] font-bold uppercase hidden mt-4">Expand History</button>
         </div>
@@ -180,14 +231,27 @@
                 </div>
             </div>
 
+            <!-- Dynamic Over Budget Alert -->
             <div id="alertSection" class="hidden bg-red-50 p-6 rounded-[2.5rem] border border-red-100 mb-6">
-                <p class="text-[10px] font-black uppercase text-red-400 mb-3">⚠️ Over Budget (>30% Total Budget)</p>
+                <p id="alertTitle" class="text-[10px] font-black uppercase text-red-400 mb-3">⚠️ Over Budget (>30% Monthly Budget)</p>
                 <div id="alertList" class="space-y-2"></div>
             </div>
 
+            <!-- Category & Mode Breakdown with 3-Way Toggle -->
             <div id="chartSection" class="bg-white p-6 rounded-[2rem] border mb-6">
-                <p class="text-[10px] font-black uppercase text-gray-400 mb-4 px-1">Category Breakdown (This Month)</p>
-                <div class="overflow-x-auto custom-scroll pb-2">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <div>
+                        <p id="catChartTitle" class="text-[10px] font-black uppercase text-gray-400">Category Breakdown</p>
+                        <p id="catChartSubtitle" class="text-[9px] font-bold text-blue-600 uppercase mt-0.5">This Month</p>
+                    </div>
+                    <div class="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+                        <button id="catMonthBtn" onclick="setCatBreakdownPeriod('month')" class="px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-[9px] font-black text-slate-700 uppercase transition-all">Month</button>
+                        <button id="catYearBtn" onclick="setCatBreakdownPeriod('year')" class="px-2.5 py-1.5 rounded-lg text-[9px] font-bold text-gray-400 uppercase transition-all">Year</button>
+                        <button id="catModesBtn" onclick="setCatBreakdownPeriod('modes')" class="px-2.5 py-1.5 rounded-lg text-[9px] font-bold text-gray-400 uppercase transition-all">Modes</button>
+                    </div>
+                </div>
+                <div id="catEmptyState" class="hidden py-12 text-center text-xs font-bold text-gray-300 uppercase">No expenses recorded for this period</div>
+                <div id="catScrollContainer" class="overflow-x-auto custom-scroll pb-2">
                     <div id="chartWrapper" class="h-[250px]">
                         <canvas id="categoryBarChart"></canvas>
                     </div>
@@ -280,18 +344,21 @@
         let currentTab = 'dashboard';
         let currentEntryType = 'expense';
         let trendViewType = 'month';
+        let catBreakdownPeriod = 'month'; // 'month' | 'year' | 'modes'
         let currentMonthExtraIncome = 0;
         let currentMonthEffectiveBudget = parseFloat(monthlySalary);
 
+        // EDIT MODAL STATE
+        let editingEntryId = null;
+        let editEntryType = 'expense';
+
         // --- DYNAMIC FORMATTERS ---
         function formatAmt(amt) {
-            // Use en-IN for Rupee (Lakhs/Crores), en-US for everything else (Millions/Billions)
             if (currentCurrency === '₹') return new Intl.NumberFormat('en-IN').format(amt);
             return new Intl.NumberFormat('en-US').format(amt);
         }
 
         function formatCompact(amt) {
-            // Uses smart abbreviation like '1.5M' or '1.5L' / '1.5Cr'
             if (currentCurrency === '₹') return new Intl.NumberFormat('en-IN', { notation: "compact", maximumFractionDigits: 1 }).format(amt);
             return new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(amt);
         }
@@ -361,7 +428,7 @@
             updateDropdowns();
         }
 
-        // --- NAVIGATION ---
+        // --- NAVIGATION & VIEW TOGGLES ---
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.nav-item').forEach(el => {
@@ -388,6 +455,31 @@
                 document.getElementById('viewTrends').classList.remove('hidden');
                 renderTrends();
             }
+        }
+
+        function setCatBreakdownPeriod(period) {
+            catBreakdownPeriod = period;
+            const activeClass = "px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-[9px] font-black text-slate-700 uppercase transition-all";
+            const inactiveClass = "px-2.5 py-1.5 rounded-lg text-[9px] font-bold text-gray-400 uppercase transition-all";
+
+            document.getElementById('catMonthBtn').className = period === 'month' ? activeClass : inactiveClass;
+            document.getElementById('catYearBtn').className = period === 'year' ? activeClass : inactiveClass;
+            document.getElementById('catModesBtn').className = period === 'modes' ? activeClass : inactiveClass;
+
+            const titleEl = document.getElementById('catChartTitle');
+            const subEl = document.getElementById('catChartSubtitle');
+
+            if (period === 'month') {
+                titleEl.innerText = "Category Breakdown";
+                subEl.innerText = "This Month";
+            } else if (period === 'year') {
+                titleEl.innerText = "Category Breakdown";
+                subEl.innerText = `Full Year (${new Date().getFullYear()})`;
+            } else {
+                titleEl.innerText = "Payment Mode Split";
+                subEl.innerText = "This Month (UPI, Cards, Cash)";
+            }
+            renderInsights();
         }
 
         function setTrendType(type) {
@@ -442,6 +534,7 @@
             else if(activeList.length > 0) select.value = activeList[0];
 
             document.getElementById('amount').placeholder = `${currentCurrency} Amount`;
+            toggleSubCategory();
 
             renderFilterChips(); 
             if(document.getElementById('manageModal').classList.contains('active')) renderManageList();
@@ -477,7 +570,7 @@
                 const exDate = new Date(ex.date);
                 if (isDefaultView) return exDate.getMonth() === now.getMonth() && exDate.getFullYear() === now.getFullYear();
                 const matchDate = (!sDate || ex.date >= sDate) && (!eDate || ex.date <= eDate);
-                const matchSearch = terms.every(t => `${ex.sector} ${ex.method} ${ex.amount}`.toLowerCase().includes(t));
+                const matchSearch = terms.every(t => `${ex.sector} ${ex.method} ${ex.amount} ${ex.note || ''}`.toLowerCase().includes(t));
                 return matchDate && matchSearch;
             });
 
@@ -501,10 +594,18 @@
                 const isInc = ex.type === 'income';
                 const sign = isInc ? '+' : '';
                 const color = isInc ? 'text-emerald-500' : 'text-slate-800';
+                const noteHtml = ex.note ? `<p class="text-[10px] text-slate-500 font-medium truncate mt-0.5">📝 ${ex.note}</p>` : '';
                 return `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border">
-                    <div class="flex-1"><p class="font-bold text-sm text-slate-700">${ex.sector}</p><p class="text-[9px] text-gray-400 uppercase font-bold">${ex.date} • ${ex.method}</p></div>
-                    <div class="flex items-center gap-4"><p class="font-black ${color}">${sign}${currentCurrency}${formatAmt(ex.amount)}</p><button onclick="deleteEntry('${ex.id}')" class="text-red-300 text-lg">✕</button></div>
+                <div onclick="openEditModal('${ex.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center mb-2 border cursor-pointer hover:border-blue-300 active:scale-[0.99] transition-all">
+                    <div class="flex-1 pr-3 overflow-hidden">
+                        <p class="font-bold text-sm text-slate-700 truncate">${ex.sector}</p>
+                        ${noteHtml}
+                        <p class="text-[9px] text-gray-400 uppercase font-bold mt-0.5">${ex.date} • ${ex.method}</p>
+                    </div>
+                    <div class="flex items-center gap-4 flex-shrink-0">
+                        <p class="font-black ${color}">${sign}${currentCurrency}${formatAmt(ex.amount)}</p>
+                        <button onclick="event.stopPropagation(); deleteEntry('${ex.id}')" class="text-red-300 hover:text-red-500 text-lg px-1">✕</button>
+                    </div>
                 </div>`
             }).join('');
             
@@ -513,6 +614,97 @@
 
             if (currentTab === 'insights') renderInsights();
             if (currentTab === 'trends') renderTrends();
+        }
+
+        // --- EDIT MODAL LOGIC ---
+        function setEditEntryType(type, targetSector = null) {
+            editEntryType = type;
+            const expBtn = document.getElementById('editTypeExpBtn');
+            const incBtn = document.getElementById('editTypeIncBtn');
+            const select = document.getElementById('editSector');
+            const subCat = document.getElementById('editSubCategoryContainer');
+
+            if (type === 'expense') {
+                expBtn.className = "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-slate-700 uppercase transition-all";
+                incBtn.className = "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
+            } else {
+                incBtn.className = "w-1/2 py-2 rounded-xl bg-white shadow-sm text-xs font-black text-emerald-600 uppercase transition-all";
+                expBtn.className = "w-1/2 py-2 rounded-xl text-xs font-bold text-gray-400 uppercase transition-all";
+                subCat.classList.add('hidden');
+            }
+
+            let list = [...(type === 'expense' ? categories : incomeCategories)];
+            if (targetSector && !list.includes(targetSector)) {
+                list.push(targetSector);
+            }
+            select.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
+            if (targetSector) select.value = targetSector;
+            toggleEditSubCategory();
+        }
+
+        function toggleEditSubCategory() {
+            const isBills = editEntryType === 'expense' && document.getElementById('editSector').value === "Bills";
+            document.getElementById('editSubCategoryContainer').classList.toggle('hidden', !isBills);
+        }
+
+        function openEditModal(id) {
+            const entry = allEntries.find(e => e.id === id);
+            if (!entry) return;
+
+            editingEntryId = id;
+            const type = entry.type === 'income' ? 'income' : 'expense';
+            
+            let mainSector = entry.sector;
+            let subSectorVal = null;
+
+            if (type === 'expense' && entry.sector && entry.sector.startsWith("🧾 Bill: ")) {
+                mainSector = "Bills";
+                subSectorVal = entry.sector.replace("🧾 Bill: ", "");
+            }
+
+            setEditEntryType(type, mainSector);
+
+            if (subSectorVal) {
+                document.getElementById('editSubSector').value = subSectorVal;
+                document.getElementById('editSubCategoryContainer').classList.remove('hidden');
+            }
+
+            document.getElementById('editAmount').value = entry.amount;
+            document.getElementById('editMethod').value = entry.method || 'UPI';
+            document.getElementById('editDate').value = entry.date;
+            document.getElementById('editNote').value = entry.note || '';
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            editingEntryId = null;
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function handleUpdateEntry() {
+            if (!editingEntryId) return;
+            const amount = document.getElementById('editAmount').value;
+            const date = document.getElementById('editDate').value;
+            const sector = document.getElementById('editSector').value;
+            const sub = document.getElementById('editSubSector').value;
+            const method = document.getElementById('editMethod').value;
+            const note = document.getElementById('editNote').value.trim();
+
+            if (!amount || !date) return alert("Please fill amount and date");
+
+            const finalSector = (editEntryType === 'expense' && sector === "Bills") ? `🧾 Bill: ${sub}` : sector;
+
+            await db.collection("expenses").doc(editingEntryId).update({
+                amount: parseFloat(amount),
+                sector: finalSector,
+                method: method,
+                date: date,
+                note: note,
+                type: editEntryType
+            });
+
+            closeEditModal();
         }
 
         // --- INSIGHTS HTML HELPER ---
@@ -557,8 +749,16 @@
             const now = new Date();
             let thisMonthExp = 0, lastMonthExp = 0, thisYearExp = 0, lastYearExp = 0;
             let thisMonthInc = 0, lastMonthInc = 0, thisYearInc = 0, lastYearInc = 0;
-            let activeCatData = {};
+            let monthlyCatData = {}, yearlyCatData = {}, monthlyModeData = {};
             const expensesOnly = [];
+
+            const modeIcons = {
+                "UPI": "📱 UPI",
+                "Cash": "💵 Cash",
+                "Credit Card": "💳 Credit Card",
+                "Debit Card": "🏦 Debit Card",
+                "Bank Transfer": "🏛️ Bank Transfer"
+            };
 
             allEntries.forEach(ex => {
                 const exD = new Date(ex.date);
@@ -570,15 +770,23 @@
                 if (!isInc) expensesOnly.push(ex);
 
                 if (y === now.getFullYear() && m === now.getMonth()) {
-                    if (isInc) thisMonthInc += amt; else thisMonthExp += amt;
-                    if (!isInc) activeCatData[ex.sector] = (activeCatData[ex.sector] || 0) + amt;
+                    if (isInc) thisMonthInc += amt; 
+                    else {
+                        thisMonthExp += amt;
+                        monthlyCatData[ex.sector] = (monthlyCatData[ex.sector] || 0) + amt;
+                        const modeLabel = modeIcons[ex.method] || ex.method || "Other";
+                        monthlyModeData[modeLabel] = (monthlyModeData[modeLabel] || 0) + amt;
+                    }
                 }
                 if (m === (now.getMonth() - 1 + 12) % 12 && (now.getMonth() === 0 ? y === now.getFullYear() - 1 : y === now.getFullYear())) {
                     if (isInc) lastMonthInc += amt; else lastMonthExp += amt;
                 }
 
                 if (y === now.getFullYear()) {
-                    if (isInc) thisYearInc += amt; else thisYearExp += amt;
+                    if (isInc) thisYearInc += amt; else {
+                        thisYearExp += amt;
+                        yearlyCatData[ex.sector] = (yearlyCatData[ex.sector] || 0) + amt;
+                    }
                 }
                 if (y === now.getFullYear() - 1) {
                     if (isInc) lastYearInc += amt; else lastYearExp += amt;
@@ -591,17 +799,29 @@
                 createCompCardHTML("Monthly Income", thisMonthInc, lastMonthInc, true) +
                 createCompCardHTML("Yearly Income", thisYearInc, lastYearInc, true);
 
+            const isYearView = catBreakdownPeriod === 'year';
+            const isModesView = catBreakdownPeriod === 'modes';
+            
+            const activeChartData = isYearView ? yearlyCatData : (isModesView ? monthlyModeData : monthlyCatData);
+            const alertCatData = isYearView ? yearlyCatData : monthlyCatData;
+            const currentYearEffectiveBudget = (parseFloat(monthlySalary) * 12) + thisYearInc;
+            const referenceBudget = isYearView ? currentYearEffectiveBudget : currentMonthEffectiveBudget;
+
+            document.getElementById('alertTitle').innerText = isYearView 
+                ? "⚠️ Over Budget (>30% Annual Budget)" 
+                : "⚠️ Over Budget (>30% Monthly Budget)";
+
             let alertsHtml = '';
-            Object.keys(activeCatData).forEach(cat => {
-                const amount = activeCatData[cat];
-                if ((amount / currentMonthEffectiveBudget) * 100 >= 30) {
+            Object.keys(alertCatData).forEach(cat => {
+                const amount = alertCatData[cat];
+                if ((amount / referenceBudget) * 100 >= 30) {
                     alertsHtml += `<div class="bg-white p-3 rounded-xl flex justify-between items-center"><span class="font-bold text-xs text-slate-700">${cat}</span><span class="font-black text-xs text-red-500">${currentCurrency}${formatAmt(amount)}</span></div>`;
                 }
             });
             document.getElementById('alertSection').classList.toggle('hidden', !alertsHtml);
             document.getElementById('alertList').innerHTML = alertsHtml;
 
-            updateChart(activeCatData);
+            updateChart(activeChartData, referenceBudget, isModesView);
 
             const sDate = document.getElementById('startDate').value;
             const eDate = document.getElementById('endDate').value;
@@ -623,15 +843,31 @@
             }
         }
 
-        function updateChart(summary) {
-            const ctx = document.getElementById('categoryBarChart').getContext('2d');
+        function updateChart(summary, referenceBudget, isModesView = false) {
             const labels = Object.keys(summary).sort((a,b) => summary[b] - summary[a]);
+            const emptyState = document.getElementById('catEmptyState');
+            const scrollContainer = document.getElementById('catScrollContainer');
+
+            if (labels.length === 0) {
+                emptyState.classList.remove('hidden');
+                scrollContainer.classList.add('hidden');
+                if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+                return;
+            }
+            emptyState.classList.add('hidden');
+            scrollContainer.classList.remove('hidden');
+
+            const ctx = document.getElementById('categoryBarChart').getContext('2d');
             const totalSpent = Object.values(summary).reduce((a, b) => a + b, 0);
+            const activeBudget = referenceBudget || currentMonthEffectiveBudget || 1;
 
             const dataPoints = labels.map(l => summary[l]);
-            const backgroundColors = dataPoints.map(val => (val / currentMonthEffectiveBudget) * 100 >= 30 ? '#ef4444' : '#3b82f6');
+            const backgroundColors = dataPoints.map(val => {
+                if (isModesView) return '#0ea5e9';
+                return (val / activeBudget) * 100 >= 30 ? '#ef4444' : '#3b82f6';
+            });
 
-            const chartWidth = Math.max(labels.length * 60, 300);
+            const chartWidth = Math.max(labels.length * 65, 300);
             document.getElementById('chartWrapper').style.width = `${chartWidth}px`;
             
             if (categoryChart) categoryChart.destroy();
@@ -641,7 +877,18 @@
                 data: { labels, datasets: [{ data: dataPoints, backgroundColor: backgroundColors, borderRadius: 8, barThickness: 30 }] }, 
                 options: { 
                     indexAxis: 'x', responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: false, tooltip: { callbacks: { label: c => [` ${currentCurrency}${formatAmt(c.raw)}`, ` Total: ${((c.raw/totalSpent)*100).toFixed(1)}%`] } } }, 
+                    plugins: { 
+                        legend: false, 
+                        tooltip: { 
+                            callbacks: { 
+                                label: c => [
+                                    ` ${currentCurrency}${formatAmt(c.raw)}`, 
+                                    ` Share of Spend: ${((c.raw/totalSpent)*100).toFixed(1)}%`,
+                                    ` Share of Budget: ${((c.raw/activeBudget)*100).toFixed(1)}%`
+                                ] 
+                            } 
+                        } 
+                    }, 
                     scales: { x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }, y: { display: false } },
                     animation: {
                         onComplete: function() {
@@ -653,7 +900,7 @@
                                 meta.data.forEach((bar, index) => {
                                     const val = ds.data[index];
                                     const pct = ((val/totalSpent)*100).toFixed(1) + '%';
-                                    ctx.fillStyle = (val/currentMonthEffectiveBudget)*100 >= 30 ? '#ef4444' : '#64748b';
+                                    ctx.fillStyle = (!isModesView && (val/activeBudget)*100 >= 30) ? '#ef4444' : '#64748b';
                                     ctx.fillText(pct, bar.x, bar.y - 5);
                                 });
                             });
@@ -821,6 +1068,7 @@
             const date = document.getElementById('date').value;
             const sector = document.getElementById('sector').value;
             const sub = document.getElementById('subSector').value;
+            const note = document.getElementById('note').value.trim();
             
             const finalSector = (currentEntryType === 'expense' && sector === "Bills") ? `🧾 Bill: ${sub}` : sector;
             if (!amount || !date) return alert("Please fill details");
@@ -830,10 +1078,12 @@
                 sector: finalSector, 
                 method: document.getElementById('method').value, 
                 date, 
+                note,
                 type: currentEntryType, 
                 uid: auth.currentUser.uid 
             });
             document.getElementById('amount').value = "";
+            document.getElementById('note').value = "";
         }
         function handleAddCategory() { 
             const n = prompt(`New ${currentEntryType === 'expense' ? 'Expense' : 'Income'} Category Name:`); 
@@ -873,10 +1123,16 @@
                 saveSettings(); 
             } 
         }
-        function sanitize(str) { return str.replace(/[^\x00-\x7F]/g, "").trim(); }
+        function sanitize(str) { return (str || "").replace(/[^\x00-\x7F]/g, "").trim(); }
         function exportExcel() {
-            // Excel is better served by raw numbers in the Amount column, but we'll include currency in a separate column or just let Excel format it
-            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ Date: ex.date, Type: ex.type==='income'?'Income':'Expense', Category: sanitize(ex.sector), Method: ex.method, Amount: ex.amount })));
+            const ws = XLSX.utils.json_to_sheet(allEntries.map(ex => ({ 
+                Date: ex.date, 
+                Type: ex.type === 'income' ? 'Income' : 'Expense', 
+                Category: sanitize(ex.sector), 
+                Note: ex.note || '-',
+                Method: ex.method, 
+                Amount: ex.amount 
+            })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Spend"); XLSX.writeFile(wb, "Report.xlsx");
         }
         function exportPDF() {
@@ -886,8 +1142,15 @@
             doc.setDrawColor(200); doc.line(14, 32, 196, 32);
             doc.setFontSize(12); doc.setTextColor(0); doc.text("FINANCIAL SUMMARY", 14, 42);
             doc.setFontSize(10); doc.text(`Effective Budget (Salary + Extra): ${currentCurrency}${formatAmt(currentMonthEffectiveBudget)}`, 14, 50);
-            const rows = allEntries.map(ex => [ex.date, ex.type==='income'?'Income':'Expense', sanitize(ex.sector), ex.method, `${currentCurrency}${formatAmt(ex.amount)}`]);
-            doc.autoTable({ head: [['Date', 'Type', 'Category', 'Method', 'Amount']], body: rows, startY: 60, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
+            const rows = allEntries.map(ex => [
+                ex.date, 
+                ex.type === 'income' ? 'Income' : 'Expense', 
+                sanitize(ex.sector), 
+                sanitize(ex.note || '-'),
+                ex.method, 
+                `${currentCurrency}${formatAmt(ex.amount)}`
+            ]);
+            doc.autoTable({ head: [['Date', 'Type', 'Category', 'Note', 'Method', 'Amount']], body: rows, startY: 60, theme: 'striped', headStyles: { fillColor: [15, 23, 42] } });
             doc.save("SpendGuard_Branded_Report.pdf");
         }
         function handleLogin() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
